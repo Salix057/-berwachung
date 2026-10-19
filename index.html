@@ -12,7 +12,6 @@
   <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
   <style>
-    /* Saubere Infrarot-Nachtsicht: Maximale Helligkeit & Kontrast */
     .night-vision-active {
       filter: brightness(3.0) contrast(1.8) grayscale(1) !important;
     }
@@ -24,18 +23,16 @@
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans overflow-x-hidden">
 
-  <!-- ========================================== -->
-  <!-- PC RAUM-BELEUCHTUNG (FLUTLICHT Z-INDEX 100000) -->
-  <!-- ========================================== -->
+  <!-- PC RAUM-BELEUCHTUNG (FLUTLICHT) -->
   <div id="pcTorchLight" style="display: none; position: fixed; inset: 0; background-color: #ffffff; z-index: 100000; width: 100vw; height: 100vh;"></div>
 
-  <!-- PC TARN-MODUS (SCHWARZER BILDSCHIRM Z-INDEX 99999) -->
+  <!-- PC TARN-MODUS (SCHWARZER BILDSCHIRM) -->
   <div id="pcBlackoutOverlay" ondblclick="togglePcBlackout()" style="display: none; position: fixed; inset: 0; background-color: #000000; z-index: 99999; cursor: pointer; flex-direction: column; align-items: center; justify-content: center;">
     <span style="color: #222; font-size: 11px; user-select: none;">SafeCam aktiv [ESC oder Doppelklick zum Aufwecken]</span>
   </div>
 
   <!-- ========================================== -->
-  <!-- VIDEO-PLAYER MODAL (IPHONE & PC KOMPATIBEL)-->
+  <!-- VIDEO-PLAYER MODAL                         -->
   <!-- ========================================== -->
   <div id="videoModal" style="display: none; position: fixed; inset: 0; z-index: 50; background-color: rgba(0,0,0,0.92); backdrop-filter: blur(8px); flex-direction: column; align-items: center; justify-content: center; padding: 1rem;">
     <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full p-4 flex flex-col gap-3 shadow-2xl">
@@ -101,7 +98,7 @@
   <header class="bg-slate-900 border-b border-slate-800 px-4 py-3 flex justify-between items-center z-20">
     <div class="flex items-center gap-2">
       <i data-lucide="shield-check" class="w-6 h-6 text-emerald-500"></i>
-      <h1 class="text-lg font-bold tracking-wider uppercase text-emerald-400">SafeCam <span class="text-xs px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">60 FPS Ultra</span></h1>
+      <h1 class="text-lg font-bold tracking-wider uppercase text-emerald-400">SafeCam <span class="text-xs px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">Pro Live</span></h1>
     </div>
     <div id="connectionStatus" class="flex items-center gap-2 text-xs font-mono text-amber-400 bg-slate-950 px-3 py-1.5 rounded-full border border-slate-800">
       <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
@@ -122,7 +119,7 @@
       </div>
       <div>
         <div class="font-bold text-lg text-white">Kamera-Station (PC)</div>
-        <div class="text-xs text-emerald-200">Auto-Nachtsicht, Flutlicht & 30s MP4-Clips</div>
+        <div class="text-xs text-emerald-200">Auto-Nachtsicht, Flutlicht & WhatsApp-Alarm</div>
       </div>
     </button>
 
@@ -132,7 +129,7 @@
       </div>
       <div>
         <div class="font-bold text-lg text-white">Monitor-Viewer (Handy)</div>
-        <div class="text-xs text-blue-200">Live-Bild, Nachtsicht, Licht-Schalter & Videos</div>
+        <div class="text-xs text-blue-200">Live-Bild, Nachtsicht, Licht & Videos</div>
       </div>
     </button>
   </div>
@@ -153,7 +150,6 @@
           <span id="camOsdTime" class="text-slate-200">0000-00-00 00:00:00</span>
         </div>
 
-        <!-- Automatische Nachtsicht Badge -->
         <div id="camNightVisionBadge" class="hidden absolute top-3 right-3 bg-emerald-950/90 text-emerald-400 border border-emerald-700 px-3 py-1 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 shadow-lg">
           <i data-lucide="moon" class="w-4 h-4 text-emerald-400"></i>
           <span>NACHTSICHT (AUTO)</span>
@@ -183,18 +179,40 @@
           </div>
         </div>
 
-        <div class="border-t border-slate-800 pt-3 space-y-2">
-          <div class="flex justify-between items-center">
-            <h4 class="text-xs font-bold uppercase text-slate-400 flex items-center gap-1.5">
-              <i data-lucide="mail" class="w-4 h-4 text-emerald-400"></i> Alarm-E-Mail
-            </h4>
-            <span id="mailStatusBadge" class="text-[10px] text-emerald-400 bg-emerald-950 border border-emerald-800 px-2 py-0.5 rounded font-mono">Bereit</span>
+        <!-- WHATSAPP & E-MAIL ALARMIERUNG -->
+        <div class="border-t border-slate-800 pt-3 space-y-3">
+          <!-- WhatsApp Block -->
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <h4 class="text-xs font-bold uppercase text-emerald-400 flex items-center gap-1.5">
+                <i data-lucide="message-circle" class="w-4 h-4 text-emerald-400"></i> WhatsApp-Alarm
+              </h4>
+              <span id="waStatusBadge" class="text-[10px] text-slate-400 font-mono">+49 1573 2410735</span>
+            </div>
+            <div class="flex gap-1.5">
+              <input type="text" id="waApiKeyInput" placeholder="6-stelligen API-Key einfügen..." class="flex-1 bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs font-mono text-emerald-300 focus:outline-none focus:border-emerald-500">
+              <button type="button" onclick="sendWhatsAppTest()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-2 rounded-lg font-bold cursor-pointer">Test</button>
+            </div>
+            <a href="https://wa.me/34644263377?text=I%20allow%20callmebot%20to%20send%20me%20messages" target="_blank" class="text-[11px] text-emerald-400 hover:underline flex items-center gap-1 mt-1 font-semibold">
+              <i data-lucide="external-link" class="w-3 h-3"></i> 👉 Hier klicken: WhatsApp-Key anfordern (1 Klick)
+            </a>
           </div>
-          <div class="bg-slate-950 p-2 rounded-lg border border-slate-800 text-xs font-mono text-emerald-400 font-semibold truncate">
-            mexgogo16@gmail.com
+
+          <!-- E-Mail Block -->
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <h4 class="text-xs font-bold uppercase text-slate-400 flex items-center gap-1.5">
+                <i data-lucide="mail" class="w-4 h-4 text-slate-400"></i> E-Mail-Alarm
+              </h4>
+              <span id="mailStatusBadge" class="text-[10px] text-emerald-400 bg-emerald-950 border border-emerald-800 px-2 py-0.5 rounded font-mono">Bereit</span>
+            </div>
+            <div class="bg-slate-950 p-2 rounded-lg border border-slate-800 text-xs font-mono text-emerald-400 font-semibold truncate">
+              mexgogo16@gmail.com
+            </div>
           </div>
-          <button type="button" onclick="triggerAlarm('Manueller PC-Test')" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold p-2.5 rounded-xl text-xs flex items-center justify-center gap-2 transition cursor-pointer">
-            <i data-lucide="alert-triangle" class="w-4 h-4"></i> 🚨 Test-Alarm & 30s Clip auslösen
+
+          <button type="button" onclick="triggerAlarm('Manueller Test')" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold p-2.5 rounded-xl text-xs flex items-center justify-center gap-2 transition cursor-pointer">
+            <i data-lucide="alert-triangle" class="w-4 h-4"></i> 🚨 Test-Alarm (WhatsApp, Mail & Clip)
           </button>
         </div>
 
@@ -203,7 +221,7 @@
             <span class="flex items-center gap-1.5"><i data-lucide="video" class="w-4 h-4 text-emerald-400"></i> Gespeicherte Clips (Permanent)</span>
             <span id="clipCountBadge" class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-mono">0</span>
           </h4>
-          <div id="pcClipsGallery" class="overflow-y-auto max-h-52 space-y-2 pr-1 text-xs">
+          <div id="pcClipsGallery" class="overflow-y-auto max-h-48 space-y-2 pr-1 text-xs">
             <div id="noPcClipsMsg" class="text-slate-500 py-4 text-center">Noch keine Clips vorhanden.</div>
           </div>
         </div>
@@ -227,11 +245,10 @@
       </div>
     </div>
 
-    <!-- Live Monitor Feed (60 FPS mit automatischer Nachtsicht) -->
+    <!-- Live Monitor Feed -->
     <div id="liveStreamWrapper" class="relative bg-black rounded-2xl overflow-hidden border border-slate-800 shadow-2xl aspect-video w-full flex items-center justify-center">
       <video id="remoteVideo" autoplay playsinline muted class="w-full h-full object-contain bg-black"></video>
 
-      <!-- Nachtsicht-Indikator -->
       <div id="viewerNightVisionBadge" class="hidden absolute top-3 left-1/2 -translate-x-1/2 bg-emerald-950/90 text-emerald-400 border border-emerald-700 px-3 py-1 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 shadow-lg">
         <i data-lucide="moon" class="w-3.5 h-3.5"></i>
         <span id="nightVisionBadgeText">NACHTSICHT AKTIV</span>
@@ -250,7 +267,7 @@
       <div id="alertBanner" class="hidden absolute bottom-4 inset-x-4 bg-rose-600/95 backdrop-blur text-white p-3 rounded-xl border border-rose-400 font-bold text-sm flex items-center justify-between shadow-2xl animate-pulse">
         <div class="flex items-center gap-2">
           <i data-lucide="bell" class="w-5 h-5"></i>
-          <span id="alertBannerText">Bewegung! 30s Clip wird übertragen...</span>
+          <span id="alertBannerText">Bewegung! WhatsApp & Clip gesendet...</span>
         </div>
         <button type="button" onclick="document.getElementById('alertBanner').classList.add('hidden')" class="bg-white/20 px-2.5 py-1 rounded text-xs cursor-pointer">OK</button>
       </div>
@@ -258,38 +275,31 @@
 
     <!-- Handy Steuerungskonsole -->
     <div class="grid grid-cols-4 gap-2 bg-slate-900 border border-slate-800 p-3 rounded-2xl">
-      
-      <!-- HAUPTKNOPF: GESPEICHERTE VIDEOS -->
       <button id="btnOpenDrawer" type="button" onclick="openClipsDrawer()" class="col-span-2 bg-gradient-to-r from-emerald-600 to-teal-700 active:scale-95 border border-emerald-500/40 p-3.5 rounded-xl flex items-center justify-center gap-2 cursor-pointer shadow-lg">
         <i data-lucide="film" class="w-5 h-5 text-white"></i>
         <span class="text-xs font-bold text-white">Videos (30s)</span>
         <span id="mobileClipCounter" class="bg-black/40 text-emerald-300 text-[10px] font-mono px-2 py-0.5 rounded-full font-bold">0</span>
       </button>
 
-      <!-- Alarm Scharf / Unscharf -->
       <button id="alarmToggleBtn" type="button" onclick="toggleAlarmArming()" class="col-span-2 bg-emerald-950/80 border border-emerald-700 p-3.5 rounded-xl flex items-center justify-center gap-2 cursor-pointer">
         <i data-lucide="bell" class="w-5 h-5 text-emerald-400" id="alarmToggleIcon"></i>
         <span class="text-xs font-bold text-emerald-300" id="alarmToggleText">Alarme: AN</span>
       </button>
 
-      <!-- RAUM-BELEUCHTUNG (PC FLUTLICHT WEISS) -->
       <button id="torchBtn" type="button" onclick="toggleRemoteTorch()" class="col-span-2 bg-slate-800 active:scale-95 border border-slate-700 p-3 rounded-xl flex items-center justify-center gap-2 cursor-pointer">
         <i data-lucide="sun-medium" class="w-5 h-5 text-amber-400" id="torchIcon"></i>
         <span class="text-xs font-bold text-slate-200" id="torchText">💡 Raum-Licht: AUS</span>
       </button>
 
-      <!-- NACHTSICHT MODUS (AUTO / MANUELL) -->
       <button id="nightVisionBtn" type="button" onclick="cycleNightVision()" class="col-span-2 bg-slate-800 active:scale-95 border border-slate-700 p-3 rounded-xl flex items-center justify-center gap-2 cursor-pointer">
         <i data-lucide="moon" class="w-5 h-5 text-emerald-400" id="nightVisionIcon"></i>
         <span class="text-xs font-bold text-emerald-300" id="nightVisionText">🌙 Nachtsicht: AUTO</span>
       </button>
 
-      <!-- Test-Alarm -->
       <button type="button" onclick="triggerRemoteTestAlarm()" class="col-span-2 bg-rose-950/80 hover:bg-rose-900/80 border border-rose-800 p-2.5 rounded-xl flex items-center justify-center gap-2 cursor-pointer text-rose-300 font-bold text-xs">
         <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-400"></i> Test-Alarm auslösen
       </button>
 
-      <!-- Push-to-Talk (Gegensprechanlage) -->
       <button id="pttBtn" type="button" class="col-span-2 bg-slate-800 active:bg-emerald-600 border border-slate-700 p-2.5 rounded-xl flex items-center justify-center gap-2 select-none cursor-pointer">
         <i data-lucide="mic" class="w-4 h-4 text-emerald-400"></i>
         <span class="text-xs font-bold text-slate-200">Sprechen (Halten)</span>
@@ -312,7 +322,7 @@
         <h4 class="font-bold text-sm text-slate-200 flex items-center gap-2">
           <i data-lucide="history" class="w-4 h-4 text-emerald-400"></i> Letzte Alarme
         </h4>
-        <span class="text-[11px] text-emerald-400 font-mono">mexgogo16@gmail.com</span>
+        <span class="text-[11px] text-emerald-400 font-mono">WhatsApp & Mail aktiv</span>
       </div>
       <div id="mobileEventLog" class="flex-1 overflow-y-auto max-h-36 space-y-2 pr-1 text-xs">
         <div id="noEventsMsg" class="text-center py-3 text-slate-500">Keine neuen Alarme.</div>
@@ -323,7 +333,6 @@
   <audio id="remoteAudioPlayer" autoplay></audio>
 
   <script>
-    // Globale Funktions-Registrierung
     window.startCameraMode = startCameraMode;
     window.startViewerMode = startViewerMode;
     window.playClipInModal = playClipInModal;
@@ -340,6 +349,7 @@
     window.toggleRemoteTorch = toggleRemoteTorch;
     window.triggerRemoteSiren = triggerRemoteSiren;
     window.triggerRemoteTestAlarm = triggerRemoteTestAlarm;
+    window.sendWhatsAppTest = sendWhatsAppTest;
     window.triggerAlarm = triggerAlarm;
     window.forgetSavedCam = forgetSavedCam;
 
@@ -353,15 +363,16 @@
     let clipCounter = 0;
     let mobileClipsCount = 0;
 
-    // Nachtsicht-Steuerung: 'auto', 'on', 'off'
     let nightVisionMode = 'auto';
     let isDarkDetected = false;
     let isTorchOn = false;
 
-    // Geordnete Video-Übertragung
     let incomingClipMeta = null;
     let incomingClipChunks = null;
     let receivedChunksCount = 0;
+
+    // Deine WhatsApp-Nummer im internationalen Format
+    const USER_WHATSAPP_PHONE = "4915732410735";
 
     const peerOptions = {
       config: {
@@ -427,11 +438,8 @@
     async function loadSavedClipsOnStartup(isPc) {
       const clips = await dbGetAllClips();
       clips.forEach(clip => {
-        if (isPc) {
-          renderClipInPcGallery(clip.blob, clip.title, clip.thumb, clip.mimeType);
-        } else {
-          renderClipInMobileDrawer(clip.blob, clip.title, clip.thumb, clip.mimeType);
-        }
+        if (isPc) renderClipInPcGallery(clip.blob, clip.title, clip.thumb, clip.mimeType);
+        else renderClipInMobileDrawer(clip.blob, clip.title, clip.thumb, clip.mimeType);
       });
     }
 
@@ -450,7 +458,6 @@
       }
     }
 
-    // iPhone-kompatibles Aufnahmeformat ermitteln
     function getBestRecordingMimeType() {
       const candidates = [
         'video/mp4;codecs=avc1,mp4a.40.2',
@@ -492,7 +499,7 @@
     }, 1000);
 
     // ==========================================
-    // TARN-MODUS & FLUTLICHT STEUERUNG
+    // TARN-MODUS & FLUTLICHT
     // ==========================================
     function enablePcBlackout() {
       document.getElementById('pcBlackoutOverlay').style.display = 'flex';
@@ -516,7 +523,7 @@
     });
 
     // ==========================================
-    // VIDEO-PLAYER FUNKTIONEN (APPLE & PC)
+    // VIDEO-PLAYER
     // ==========================================
     function playClipInModal(url, title, mimeType) {
       const modal = document.getElementById('videoModal');
@@ -542,17 +549,9 @@
       modal.style.display = 'flex';
       player.load();
 
-      // iOS Safari Play-Trigger
       const playPromise = player.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(() => {
-          // Falls iOS Autoplay blockiert, kann der Nutzer normal den Player-Knopf tippen
-        });
-      }
-
-      player.onerror = () => {
-        fallbackNotice.style.display = 'block';
-      };
+      if (playPromise !== undefined) playPromise.catch(() => {});
+      player.onerror = () => { fallbackNotice.style.display = 'block'; };
     }
 
     function closeVideoModal() {
@@ -590,13 +589,21 @@
     }
 
     // ==========================================
-    // 1. KAMERA-STATION (PC - 60 FPS & AUTO-NACHTSICHT)
+    // 1. KAMERA-STATION (PC)
     // ==========================================
     async function startCameraMode() {
       document.getElementById('modeSelection').style.display = 'none';
       document.getElementById('cameraView').style.display = 'flex';
 
       loadSavedClipsOnStartup(true);
+
+      // Gespeicherten WhatsApp API-Key laden
+      const savedWaKey = safeStorageGet('safecam_wa_key', '');
+      const waInput = document.getElementById('waApiKeyInput');
+      if (waInput) {
+        waInput.value = savedWaKey;
+        waInput.onchange = (e) => safeStorageSet('safecam_wa_key', e.target.value.trim());
+      }
 
       try {
         const videoConstraints = {
@@ -636,16 +643,12 @@
           });
         });
 
-        // WICHTIG: Sobald sich das Smartphone verbindet, PC-Bildschirm schwarz schalten!
         peer.on('connection', (conn) => {
           dataConnection = conn;
           document.getElementById('statusText').innerText = "Verbunden";
           document.getElementById('connectionStatus').classList.replace('text-amber-400', 'text-emerald-400');
 
-          // PC AUTOMATISCH SCHWARZ SCHALTEN
-          setTimeout(() => {
-            enablePcBlackout();
-          }, 1000);
+          setTimeout(() => { enablePcBlackout(); }, 1000);
 
           conn.on('data', (data) => {
             if (data.type === 'REQUEST_STREAM') peer.call(data.viewerId, localStream);
@@ -653,7 +656,6 @@
             if (data.type === 'TEST_ALARM') triggerAlarm('Manueller Handy-Test');
             if (data.type === 'SIREN') playLocalSiren();
 
-            // RAUM-BELEUCHTUNG: PC Bildschirm wird weißes Flutlicht!
             if (data.type === 'TORCH_TOGGLE') {
               const torch = document.getElementById('pcTorchLight');
               torch.style.display = data.state ? 'block' : 'none';
@@ -677,7 +679,6 @@
       }
     }
 
-    // Bewegungserkennung & Automatische Nachtsicht (Luminanz-Messung)
     function initMotionAndLuminanceDetection() {
       const video = document.getElementById('localVideo');
       const canvas = document.getElementById('motionCanvas');
@@ -696,7 +697,6 @@
         let diffScore = 0;
         const len = currentFrame.data.length;
 
-        // 1. Helligkeit im Raum berechnen (0 = Pechschwarz, 255 = Hell)
         for (let i = 0; i < len; i += 16) {
           totalLuma += currentFrame.data[i] * 0.299 + currentFrame.data[i+1] * 0.587 + currentFrame.data[i+2] * 0.114;
 
@@ -710,27 +710,19 @@
 
         const avgLuma = totalLuma / (len / 16);
 
-        // AUTOMATISCHE NACHTSICHT BEI DUNKELHEIT
         const pcNightBadge = document.getElementById('camNightVisionBadge');
         if (avgLuma < 35 && !isDarkDetected) {
           isDarkDetected = true;
           video.classList.add('night-vision-active');
-          pcNightBadge.classList.remove('hidden');
-
-          if (dataConnection && dataConnection.open) {
-            dataConnection.send({ type: 'AUTO_NIGHT_VISION', active: true });
-          }
+          if (pcNightBadge) pcNightBadge.classList.remove('hidden');
+          if (dataConnection && dataConnection.open) dataConnection.send({ type: 'AUTO_NIGHT_VISION', active: true });
         } else if (avgLuma >= 45 && isDarkDetected) {
           isDarkDetected = false;
           video.classList.remove('night-vision-active');
-          pcNightBadge.classList.add('hidden');
-
-          if (dataConnection && dataConnection.open) {
-            dataConnection.send({ type: 'AUTO_NIGHT_VISION', active: false });
-          }
+          if (pcNightBadge) pcNightBadge.classList.add('hidden');
+          if (dataConnection && dataConnection.open) dataConnection.send({ type: 'AUTO_NIGHT_VISION', active: false });
         }
 
-        // Bewegungserkennung
         if (prevFrame && diffScore > 12 && !motionCooldown && isAlarmArmed) {
           triggerAlarm("Bewegung erkannt!");
           motionCooldown = true;
@@ -749,21 +741,17 @@
         const ctx = c.getContext('2d');
         ctx.drawImage(videoElement, 0, 0, c.width, c.height);
         return c.toDataURL('image/jpeg', 0.7);
-      } catch(e) {
-        return "";
-      }
+      } catch(e) { return ""; }
     }
 
     function triggerAlarm(msg) {
       const timestamp = getFormattedTimestamp();
       const thumbData = captureThumbnail(document.getElementById('localVideo'));
 
-      const b = document.getElementById('motionBadge');
-      if (b) {
-        b.classList.remove('hidden');
-        setTimeout(() => b.classList.add('hidden'), 5000);
-      }
+      // 1. WhatsApp Benachrichtigung senden!
+      sendWhatsAppAlert(msg, timestamp);
 
+      // 2. E-Mail senden
       sendEmailAlert(msg, timestamp);
 
       if (dataConnection && dataConnection.open) {
@@ -771,6 +759,38 @@
       }
 
       recordLocalPcClip(30, msg, timestamp, thumbData);
+    }
+
+    // ==========================================
+    // WHATSAPP API SENDEN (CALLMEBOT)
+    // ==========================================
+    function sendWhatsAppAlert(eventName, timestamp) {
+      const apiKey = safeStorageGet('safecam_wa_key', '');
+      if (!apiKey) {
+        console.warn("Kein WhatsApp API-Key eingetragen. Klicke auf 'WhatsApp-Key anfordern'.");
+        return;
+      }
+
+      const text = encodeURIComponent(`🚨 *SafeCam Sicherheitsalarm!*\n\nEreignis: ${eventName}\nUhrzeit: ${timestamp}\nEin 30-Sekunden-Videoclip wurde aufgezeichnet.`);
+      const url = `https://api.callmebot.com/whatsapp.php?phone=${USER_WHATSAPP_PHONE}&text=${text}&apikey=${apiKey}`;
+
+      // Per fetch & Image-Beacon aufrufen (umgeht alle Browser-CORS-Blockaden)
+      fetch(url, { mode: 'no-cors' }).catch(() => {
+        const img = new Image();
+        img.src = url;
+      });
+    }
+
+    function sendWhatsAppTest() {
+      const input = document.getElementById('waApiKeyInput');
+      const key = input ? input.value.trim() : '';
+      if (!key) {
+        alert("Bitte trage zuerst deinen 6-stelligen WhatsApp API-Key ein!\nKlicke darunter auf den Link, um ihn kostenlos in WhatsApp zu erhalten.");
+        return;
+      }
+      safeStorageSet('safecam_wa_key', key);
+      sendWhatsAppAlert("Test-Alarmierung", getFormattedTimestamp());
+      alert("WhatsApp-Nachricht wurde an +49 1573 2410735 gesendet!");
     }
 
     function sendEmailAlert(eventName, timestamp) {
@@ -800,7 +820,6 @@
       });
     }
 
-    // 30s Clip aufnehmen (MP4 für iPhone)
     function recordLocalPcClip(seconds, eventName, timestamp, thumbData) {
       if (isRecordingNow) return;
       isRecordingNow = true;
@@ -818,12 +837,12 @@
       const timerBadge = document.getElementById('recordingTimerBadge');
       const countdownEl = document.getElementById('recCountdown');
       let remaining = seconds;
-      timerBadge.classList.remove('hidden');
-      countdownEl.innerText = remaining;
+      if (timerBadge) timerBadge.classList.remove('hidden');
+      if (countdownEl) countdownEl.innerText = remaining;
 
       const countdownInterval = setInterval(() => {
         remaining--;
-        countdownEl.innerText = remaining;
+        if (countdownEl) countdownEl.innerText = remaining;
         if (remaining <= 0) clearInterval(countdownInterval);
       }, 1000);
 
@@ -833,7 +852,7 @@
 
       mediaRecorder.onstop = async () => {
         clearInterval(countdownInterval);
-        timerBadge.classList.add('hidden');
+        if (timerBadge) timerBadge.classList.add('hidden');
 
         const mime = mediaRecorder.mimeType || chosenMime || 'video/mp4';
         const blob = new Blob(recordedChunks, { type: mime });
@@ -853,12 +872,11 @@
       }, seconds * 1000);
     }
 
-    // Fluss-gesteuerte fehlerfreie Video-Übertragung an das Smartphone
     async function sendVideoToPhoneSafely(blob, title, thumb, mimeType) {
       if (!dataConnection || !dataConnection.open) return;
 
       const buffer = await blob.arrayBuffer();
-      const chunkSize = 16384; // 16 KB
+      const chunkSize = 16384;
       const totalChunks = Math.ceil(buffer.byteLength / chunkSize);
 
       dataConnection.send({
@@ -869,7 +887,6 @@
         totalChunks: totalChunks
       });
 
-      // Pakete mit Pause senden, um Datenverlust / durchgestrichenes Play zu verhindern
       for (let i = 0; i < totalChunks; i++) {
         const slice = buffer.slice(i * chunkSize, (i + 1) * chunkSize);
         dataConnection.send({
@@ -998,11 +1015,8 @@
       });
 
       dataConnection.on('data', async (data) => {
-        // AUTOMATISCHE NACHTSICHT VOM PC EMPFANGEN
         if (data.type === 'AUTO_NIGHT_VISION') {
-          if (nightVisionMode === 'auto') {
-            applyNightVisionState(data.active, true);
-          }
+          if (nightVisionMode === 'auto') applyNightVisionState(data.active, true);
         }
 
         if (data.type === 'ALERT') {
@@ -1025,7 +1039,6 @@
           log.prepend(entry);
         }
 
-        // PAKET-WEISE FEHLERFREIE VIDEO-REKONSTRUKTION
         if (data.type === 'VIDEO_TRANSFER_START') {
           incomingClipMeta = data;
           incomingClipChunks = new Array(data.totalChunks);
@@ -1110,9 +1123,6 @@
       try { if (window.lucide) lucide.createIcons(); } catch(e) {}
     }
 
-    // ==========================================
-    // NACHTSICHT & RAUM-BELEUCHTUNG STEUERUNG
-    // ==========================================
     function applyNightVisionState(active, isAuto) {
       const v = document.getElementById('remoteVideo');
       const badge = document.getElementById('viewerNightVisionBadge');
@@ -1120,15 +1130,14 @@
 
       if (active) {
         v.classList.add('night-vision-active');
-        badge.classList.remove('hidden');
-        badgeText.innerText = isAuto ? "NACHTSICHT (AUTO)" : "NACHTSICHT (MANUELL)";
+        if (badge) badge.classList.remove('hidden');
+        if (badgeText) badgeText.innerText = isAuto ? "NACHTSICHT (AUTO)" : "NACHTSICHT (MANUELL)";
       } else {
         v.classList.remove('night-vision-active');
-        badge.classList.add('hidden');
+        if (badge) badge.classList.add('hidden');
       }
     }
 
-    // Umschalten: AUTO -> AN -> AUS
     function cycleNightVision() {
       const text = document.getElementById('nightVisionText');
 
@@ -1147,7 +1156,6 @@
       }
     }
 
-    // RAUM-LICHT: PC Bildschirm wird grell weiß!
     function toggleRemoteTorch() {
       isTorchOn = !isTorchOn;
       const text = document.getElementById('torchText');
@@ -1171,7 +1179,7 @@
     function triggerRemoteTestAlarm() {
       if (dataConnection && dataConnection.open) {
         dataConnection.send({ type: 'TEST_ALARM' });
-        alert("30s Aufnahme & E-Mail am PC ausgelöst!");
+        alert("30s Aufnahme, WhatsApp & E-Mail ausgelöst!");
       }
     }
 
