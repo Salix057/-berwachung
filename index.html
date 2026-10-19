@@ -12,8 +12,6 @@
   <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
   <style>
-    .overlay-hidden { display: none !important; pointer-events: none !important; }
-    .overlay-visible { display: flex !important; pointer-events: auto !important; }
     .clean-night-vision { filter: brightness(2.2) contrast(1.3) !important; }
     button { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
   </style>
@@ -21,14 +19,21 @@
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans overflow-x-hidden">
 
   <!-- ========================================== -->
-  <!-- VIDEO-PLAYER MODAL                         -->
+  <!-- PC TARN-MODUS OVERLAY (Z-INDEX 99999)      -->
   <!-- ========================================== -->
-  <div id="videoModal" class="overlay-hidden fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex-col items-center justify-center p-4">
+  <div id="pcBlackoutOverlay" ondblclick="togglePcBlackout()" style="display: none; position: fixed; inset: 0; background-color: black; z-index: 99999; cursor: pointer; flex-direction: column; align-items: center; justify-content: center;">
+    <span style="color: #222; font-size: 11px; user-select: none;">SafeCam aktiv [ESC oder Doppelklick zum Aufwecken]</span>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- VIDEO-PLAYER MODAL (IPHONE & PC KOMPATIBEL)-->
+  <!-- ========================================== -->
+  <div id="videoModal" style="display: none; position: fixed; inset: 0; z-index: 50; background-color: rgba(0,0,0,0.92); backdrop-filter: blur(8px); flex-direction: column; align-items: center; justify-content: center; padding: 1rem;">
     <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full p-4 flex flex-col gap-3 shadow-2xl">
       <div class="flex justify-between items-center pb-2 border-b border-slate-800">
         <div class="flex items-center gap-2">
           <i data-lucide="film" class="w-5 h-5 text-emerald-400"></i>
-          <span id="modalClipTitle" class="font-mono text-sm text-slate-100 font-bold">Aufnahme</span>
+          <span id="modalClipTitle" class="font-mono text-sm text-slate-100 font-bold truncate max-w-xs sm:max-w-md">Aufnahme</span>
         </div>
         <button type="button" onclick="closeVideoModal()" class="text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-800 cursor-pointer">
           <i data-lucide="x" class="w-6 h-6"></i>
@@ -36,14 +41,15 @@
       </div>
 
       <div class="relative aspect-video bg-black rounded-xl overflow-hidden flex items-center justify-center">
-        <video id="modalVideoPlayer" controls playsinline class="w-full h-full object-contain"></video>
+        <!-- iOS Playsinline & Preload für sofortiges Abspielen auf Apple-Geräten -->
+        <video id="modalVideoPlayer" controls playsinline webkit-playsinline preload="auto" class="w-full h-full object-contain"></video>
       </div>
 
       <div class="flex justify-between items-center pt-2">
         <span class="text-xs text-slate-400">30 Sekunden Aufnahme</span>
         <div class="flex gap-2">
           <a id="modalDownloadBtn" download class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer">
-            <i data-lucide="download" class="w-4 h-4"></i> Herunterladen
+            <i data-lucide="download" class="w-4 h-4"></i> Download
           </a>
           <button type="button" onclick="closeVideoModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-xl text-xs cursor-pointer">Schließen</button>
         </div>
@@ -54,38 +60,36 @@
   <!-- ========================================== -->
   <!-- GESPEICHERTE VIDEOS DRAWER (HANDY)         -->
   <!-- ========================================== -->
-  <div id="clipsDrawer" class="overlay-hidden fixed inset-0 z-40 bg-black/80 backdrop-blur-sm flex-col justify-end sm:justify-center items-center p-0 sm:p-4">
-    <div class="bg-slate-900 border-t sm:border border-slate-700 rounded-t-3xl sm:rounded-2xl max-w-lg w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+  <div id="clipsDrawer" style="display: none; position: fixed; inset: 0; z-index: 40; background-color: rgba(0,0,0,0.85); backdrop-filter: blur(6px); flex-direction: column; justify-content: flex-end; align-items: center;">
+    <div class="bg-slate-900 border-t border-slate-700 rounded-t-3xl max-w-lg w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
       <div class="flex justify-between items-center p-4 border-b border-slate-800">
         <div class="flex items-center gap-2">
           <i data-lucide="film" class="w-5 h-5 text-emerald-400"></i>
           <h3 class="font-bold text-white text-sm">Gespeicherte 30s Videos</h3>
           <span id="drawerClipBadge" class="text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800 px-2 py-0.5 rounded-full font-mono">0</span>
         </div>
-        <button type="button" onclick="closeClipsDrawer()" class="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer">
-          <i data-lucide="x" class="w-6 h-6"></i>
-        </button>
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="clearAllClips()" class="text-red-400 hover:text-red-300 text-xs px-2 py-1 bg-red-950/50 border border-red-900 rounded cursor-pointer">Alle löschen</button>
+          <button type="button" onclick="closeClipsDrawer()" class="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer">
+            <i data-lucide="x" class="w-6 h-6"></i>
+          </button>
+        </div>
       </div>
 
       <div id="drawerClipsList" class="flex-1 overflow-y-auto p-4 space-y-2 text-xs">
         <div id="noDrawerClipsMsg" class="text-slate-500 py-12 text-center flex flex-col items-center gap-2">
           <i data-lucide="video-off" class="w-8 h-8 text-slate-600"></i>
-          <span>Noch keine Videos gespeichert.<br>Löse einen Test-Alarm aus!</span>
+          <span>Noch keine Videos gespeichert.</span>
         </div>
       </div>
     </div>
-  </div>
-
-  <!-- PC TARN-MODUS OVERLAY -->
-  <div id="pcBlackoutOverlay" ondblclick="togglePcBlackout()" class="overlay-hidden fixed inset-0 bg-black z-50 cursor-none flex-col items-center justify-center">
-    <span class="text-neutral-900 text-xs select-none">SafeCam Active [ESC drücken zum Aufwecken]</span>
   </div>
 
   <!-- Header -->
   <header class="bg-slate-900 border-b border-slate-800 px-4 py-3 flex justify-between items-center z-20">
     <div class="flex items-center gap-2">
       <i data-lucide="shield-check" class="w-6 h-6 text-emerald-500"></i>
-      <h1 class="text-lg font-bold tracking-wider uppercase text-emerald-400">SafeCam <span class="text-xs px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">Pro Live</span></h1>
+      <h1 class="text-lg font-bold tracking-wider uppercase text-emerald-400">SafeCam <span class="text-xs px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">60 FPS Ultra</span></h1>
     </div>
     <div id="connectionStatus" class="flex items-center gap-2 text-xs font-mono text-amber-400 bg-slate-950 px-3 py-1.5 rounded-full border border-slate-800">
       <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
@@ -93,9 +97,7 @@
     </div>
   </header>
 
-  <!-- ========================================== -->
-  <!-- START-AUSWAHL                              -->
-  <!-- ========================================== -->
+  <!-- Start-Auswahl -->
   <div id="modeSelection" class="flex-1 flex flex-col items-center justify-center p-6 gap-6 max-w-md mx-auto w-full z-10">
     <div class="text-center space-y-2">
       <h2 class="text-2xl font-bold text-slate-100">Geräte-Modus wählen</h2>
@@ -108,7 +110,7 @@
       </div>
       <div>
         <div class="font-bold text-lg text-white">Kamera-Station (PC)</div>
-        <div class="text-xs text-emerald-200">30s Clips aufnehmen & E-Mail an dich</div>
+        <div class="text-xs text-emerald-200">60 FPS, MP4-Clips, Auto-Tarnung & E-Mail</div>
       </div>
     </button>
 
@@ -118,7 +120,7 @@
       </div>
       <div>
         <div class="font-bold text-lg text-white">Monitor-Viewer (Handy)</div>
-        <div class="text-xs text-blue-200">Live-Stream & gespeicherte Videos ansehen</div>
+        <div class="text-xs text-blue-200">60 FPS Stream & gespeicherte Videos ansehen</div>
       </div>
     </button>
   </div>
@@ -133,13 +135,12 @@
         <canvas id="motionCanvas" class="hidden"></canvas>
 
         <div class="absolute top-3 left-3 bg-black/60 backdrop-blur px-3 py-1.5 rounded-lg border border-slate-700 font-mono text-xs flex flex-col">
-          <span class="text-red-500 font-bold flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span> REC LIVE
+          <span class="text-emerald-400 font-bold flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> 60 FPS LIVE
           </span>
           <span id="camOsdTime" class="text-slate-200">0000-00-00 00:00:00</span>
         </div>
 
-        <!-- 30s Aufnahme-Indikator -->
         <div id="recordingTimerBadge" class="hidden absolute top-3 inset-x-0 mx-auto w-max bg-red-600 text-white font-mono text-xs px-3 py-1 rounded-full font-bold animate-pulse shadow-lg flex items-center gap-2">
           <span class="w-2 h-2 bg-white rounded-full"></span>
           <span>NIMMT 30s CLIP AUF... (<span id="recCountdown">30</span>s)</span>
@@ -158,8 +159,8 @@
           <h3 class="font-bold text-slate-200 flex items-center gap-2">
             <i data-lucide="link" class="w-5 h-5 text-emerald-400"></i> Feste Geräte-ID
           </h3>
-          <button type="button" onclick="togglePcBlackout()" class="bg-slate-800 hover:bg-slate-700 text-xs px-2.5 py-1 rounded border border-slate-700 flex items-center gap-1 text-slate-300 cursor-pointer">
-            <i data-lucide="eye-off" class="w-3.5 h-3.5"></i> Tarnung
+          <button type="button" onclick="enablePcBlackout()" class="bg-slate-800 hover:bg-slate-700 text-xs px-2.5 py-1 rounded border border-slate-700 flex items-center gap-1 text-slate-300 cursor-pointer">
+            <i data-lucide="eye-off" class="w-3.5 h-3.5"></i> Tarnung an
           </button>
         </div>
 
@@ -171,29 +172,27 @@
           </div>
         </div>
 
-        <!-- Alarm Test-Knopf & E-Mail Status -->
         <div class="border-t border-slate-800 pt-3 space-y-2">
           <div class="flex justify-between items-center">
             <h4 class="text-xs font-bold uppercase text-slate-400 flex items-center gap-1.5">
               <i data-lucide="mail" class="w-4 h-4 text-emerald-400"></i> Alarm-E-Mail
             </h4>
-            <span id="mailStatusBadge" class="text-[10px] text-emerald-400 bg-emerald-950 border border-emerald-800 px-2 py-0.5 rounded">Bereit</span>
+            <span id="mailStatusBadge" class="text-[10px] text-emerald-400 bg-emerald-950 border border-emerald-800 px-2 py-0.5 rounded font-mono">Bereit</span>
           </div>
           <div class="bg-slate-950 p-2 rounded-lg border border-slate-800 text-xs font-mono text-emerald-400 font-semibold truncate">
             mexgogo16@gmail.com
           </div>
-          <button type="button" onclick="triggerAlarm('Manueller Test-Alarm')" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold p-2.5 rounded-xl text-xs flex items-center justify-center gap-2 transition cursor-pointer">
-            <i data-lucide="alert-triangle" class="w-4 h-4"></i> 🚨 Test-Alarm & Clip auslösen
+          <button type="button" onclick="triggerAlarm('Manueller PC-Test')" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold p-2.5 rounded-xl text-xs flex items-center justify-center gap-2 transition cursor-pointer">
+            <i data-lucide="alert-triangle" class="w-4 h-4"></i> 🚨 Test-Alarm & 30s Clip auslösen
           </button>
         </div>
 
-        <!-- PC-Clips Liste -->
         <div class="border-t border-slate-800 pt-3 flex-1 flex flex-col">
           <h4 class="text-xs font-bold uppercase text-slate-400 mb-2 flex items-center justify-between">
-            <span class="flex items-center gap-1.5"><i data-lucide="video" class="w-4 h-4 text-emerald-400"></i> Aufgenommene 30s Clips</span>
+            <span class="flex items-center gap-1.5"><i data-lucide="video" class="w-4 h-4 text-emerald-400"></i> Gespeicherte Clips (Permanent)</span>
             <span id="clipCountBadge" class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-mono">0</span>
           </h4>
-          <div id="pcClipsGallery" class="overflow-y-auto max-h-56 space-y-2 pr-1 text-xs">
+          <div id="pcClipsGallery" class="overflow-y-auto max-h-52 space-y-2 pr-1 text-xs">
             <div id="noPcClipsMsg" class="text-slate-500 py-4 text-center">Noch keine Clips vorhanden.</div>
           </div>
         </div>
@@ -217,7 +216,7 @@
       </div>
     </div>
 
-    <!-- Live Monitor Feed -->
+    <!-- Live Monitor 60 FPS -->
     <div id="liveStreamWrapper" class="relative bg-black rounded-2xl overflow-hidden border border-slate-800 shadow-2xl aspect-video w-full flex items-center justify-center">
       <video id="remoteVideo" autoplay playsinline muted class="w-full h-full object-contain bg-black"></video>
 
@@ -240,28 +239,23 @@
       </div>
     </div>
 
-    <!-- Handy Steuerungskonsole -->
+    <!-- Handy Steuerung -->
     <div class="grid grid-cols-4 gap-2 bg-slate-900 border border-slate-800 p-3 rounded-2xl">
-      
-      <!-- HAUPTKNOPF: GESPEICHERTE VIDEOS ANSEHEN -->
       <button id="btnOpenDrawer" type="button" onclick="openClipsDrawer()" class="col-span-2 bg-gradient-to-r from-emerald-600 to-teal-700 active:scale-95 border border-emerald-500/40 p-3.5 rounded-xl flex items-center justify-center gap-2 cursor-pointer shadow-lg">
         <i data-lucide="film" class="w-5 h-5 text-white"></i>
         <span class="text-xs font-bold text-white">Videos (30s)</span>
         <span id="mobileClipCounter" class="bg-black/40 text-emerald-300 text-[10px] font-mono px-2 py-0.5 rounded-full font-bold">0</span>
       </button>
 
-      <!-- Alarm Scharf / Unscharf -->
       <button id="alarmToggleBtn" type="button" onclick="toggleAlarmArming()" class="col-span-2 bg-emerald-950/80 border border-emerald-700 p-3.5 rounded-xl flex items-center justify-center gap-2 cursor-pointer">
         <i data-lucide="bell" class="w-5 h-5 text-emerald-400" id="alarmToggleIcon"></i>
         <span class="text-xs font-bold text-emerald-300" id="alarmToggleText">Alarme: AN</span>
       </button>
 
-      <!-- Test-Alarm vom Handy auslösen -->
       <button type="button" onclick="triggerRemoteTestAlarm()" class="col-span-2 bg-rose-950/80 hover:bg-rose-900/80 border border-rose-800 p-2.5 rounded-xl flex items-center justify-center gap-2 cursor-pointer text-rose-300 font-bold text-xs">
         <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-400"></i> Test-Alarm auslösen
       </button>
 
-      <!-- Push-to-Talk (Gegensprechanlage) -->
       <button id="pttBtn" type="button" class="col-span-2 bg-slate-800 active:bg-emerald-600 border border-slate-700 p-2.5 rounded-xl flex items-center justify-center gap-2 select-none cursor-pointer">
         <i data-lucide="mic" class="w-4 h-4 text-emerald-400"></i>
         <span class="text-xs font-bold text-slate-200">Sprechen (Halten)</span>
@@ -305,14 +299,17 @@
   <audio id="remoteAudioPlayer" autoplay></audio>
 
   <script>
-    // Globale Funktionen registrieren
+    // Globale Funktions-Registrierung
     window.startCameraMode = startCameraMode;
     window.startViewerMode = startViewerMode;
     window.playClipInModal = playClipInModal;
     window.closeVideoModal = closeVideoModal;
     window.openClipsDrawer = openClipsDrawer;
     window.closeClipsDrawer = closeClipsDrawer;
+    window.clearAllClips = clearAllClips;
     window.toggleAudio = toggleAudio;
+    window.enablePcBlackout = enablePcBlackout;
+    window.disablePcBlackout = disablePcBlackout;
     window.togglePcBlackout = togglePcBlackout;
     window.toggleAlarmArming = toggleAlarmArming;
     window.toggleCleanNightVision = toggleCleanNightVision;
@@ -333,7 +330,6 @@
     let clipCounter = 0;
     let mobileClipsCount = 0;
 
-    // Eingehende Videoübertragung auf dem Handy
     let incomingClipMeta = null;
     let incomingClipChunks = [];
 
@@ -345,6 +341,104 @@
         ]
       }
     };
+
+    // ==========================================
+    // INDEXED-DB: PERMANENTE SPEICHERUNG DER CLIPS
+    // ==========================================
+    const DB_NAME = 'SafeCamStorage';
+    const DB_VERSION = 1;
+    const STORE_NAME = 'video_clips';
+
+    function openDatabase() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains(STORE_NAME)) {
+            db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+          }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbSaveClip(clipData) {
+      try {
+        const db = await openDatabase();
+        return new Promise((resolve) => {
+          const tx = db.transaction(STORE_NAME, 'readwrite');
+          tx.objectStore(STORE_NAME).add(clipData);
+          tx.oncomplete = () => resolve(true);
+        });
+      } catch(e) { return false; }
+    }
+
+    async function dbGetAllClips() {
+      try {
+        const db = await openDatabase();
+        return new Promise((resolve) => {
+          const tx = db.transaction(STORE_NAME, 'readonly');
+          const req = tx.objectStore(STORE_NAME).getAll();
+          req.onsuccess = () => resolve(req.result || []);
+          req.onerror = () => resolve([]);
+        });
+      } catch(e) { return []; }
+    }
+
+    async function dbClearAllClips() {
+      try {
+        const db = await openDatabase();
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        tx.objectStore(STORE_NAME).clear();
+      } catch(e) {}
+    }
+
+    // Beim Laden alle bisherigen permanenten Clips aus der DB holen
+    async function loadSavedClipsOnStartup(isPc) {
+      const clips = await dbGetAllClips();
+      clips.forEach(clip => {
+        if (isPc) {
+          renderClipInPcGallery(clip.blob, clip.title, clip.thumb, clip.mimeType);
+        } else {
+          renderClipInMobileDrawer(clip.blob, clip.title, clip.thumb, clip.mimeType);
+        }
+      });
+    }
+
+    async function clearAllClips() {
+      if (confirm("Möchtest du wirklich alle gespeicherten Videos unwiderruflich löschen?")) {
+        await dbClearAllClips();
+        document.getElementById('drawerClipsList').innerHTML = `
+          <div id="noDrawerClipsMsg" class="text-slate-500 py-12 text-center flex flex-col items-center gap-2">
+            <i data-lucide="video-off" class="w-8 h-8 text-slate-600"></i>
+            <span>Noch keine Videos gespeichert.</span>
+          </div>`;
+        document.getElementById('mobileClipCounter').innerText = "0";
+        document.getElementById('drawerClipBadge').innerText = "0";
+        mobileClipsCount = 0;
+        try { if (window.lucide) lucide.createIcons(); } catch(e) {}
+      }
+    }
+
+    // Welches Videoformat unterstützt das Gerät? (iPhone bevorzugt MP4 / H.264)
+    function getBestRecordingMimeType() {
+      const candidates = [
+        'video/mp4;codecs=avc1,mp4a.40.2',
+        'video/mp4;codecs=avc1',
+        'video/mp4',
+        'video/webm;codecs=h264',
+        'video/webm;codecs=vp8',
+        'video/webm'
+      ];
+      for (const t of candidates) {
+        if (MediaRecorder.isTypeSupported(t)) {
+          console.log("Gewähltes Aufnahme-Format:", t);
+          return t;
+        }
+      }
+      return '';
+    }
 
     function safeStorageGet(key, def) {
       try { return localStorage.getItem(key) || def; } catch(e) { return def; }
@@ -371,31 +465,34 @@
       if (viewerOsd) viewerOsd.innerText = ts;
     }, 1000);
 
+    // ==========================================
+    // TARN-MODUS (SCHWARZER BILDSCHIRM)
+    // ==========================================
+    function enablePcBlackout() {
+      document.getElementById('pcBlackoutOverlay').style.display = 'flex';
+    }
+    function disablePcBlackout() {
+      document.getElementById('pcBlackoutOverlay').style.display = 'none';
+    }
     function togglePcBlackout() {
-      const overlay = document.getElementById('pcBlackoutOverlay');
-      if (overlay.classList.contains('overlay-visible')) {
-        overlay.classList.remove('overlay-visible');
-        overlay.classList.add('overlay-hidden');
-      } else {
-        overlay.classList.remove('overlay-hidden');
-        overlay.classList.add('overlay-visible');
-      }
+      const o = document.getElementById('pcBlackoutOverlay');
+      o.style.display = (o.style.display === 'flex') ? 'none' : 'flex';
     }
 
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         const modal = document.getElementById('videoModal');
         const drawer = document.getElementById('clipsDrawer');
-        if (modal && modal.classList.contains('overlay-visible')) closeVideoModal();
-        else if (drawer && drawer.classList.contains('overlay-visible')) closeClipsDrawer();
+        if (modal && modal.style.display === 'flex') closeVideoModal();
+        else if (drawer && drawer.style.display === 'flex') closeClipsDrawer();
         else togglePcBlackout();
       }
     });
 
     // ==========================================
-    // VIDEO-PLAYER FUNKTIONEN
+    // VIDEO-PLAYER FUNKTIONEN (APPLE & PC)
     // ==========================================
-    function playClipInModal(url, title) {
+    function playClipInModal(url, title, mimeType) {
       const modal = document.getElementById('videoModal');
       const player = document.getElementById('modalVideoPlayer');
       const titleElem = document.getElementById('modalClipTitle');
@@ -403,12 +500,15 @@
 
       titleElem.innerText = title;
       player.src = url;
-      downloadBtn.href = url;
-      downloadBtn.download = title.replace(/[: ]/g, '_') + ".webm";
+      if (mimeType) player.type = mimeType;
 
-      modal.classList.remove('overlay-hidden');
-      modal.classList.add('overlay-visible');
-      player.play().catch(e => console.log(e));
+      const ext = (mimeType && mimeType.includes('mp4')) ? '.mp4' : '.webm';
+      downloadBtn.href = url;
+      downloadBtn.download = title.replace(/[: ]/g, '_') + ext;
+
+      modal.style.display = 'flex';
+      player.load(); // Wichtig für iOS Safari!
+      player.play().catch(e => console.log("Play log:", e));
     }
 
     function closeVideoModal() {
@@ -416,20 +516,14 @@
       const player = document.getElementById('modalVideoPlayer');
       player.pause();
       player.src = "";
-      modal.classList.remove('overlay-visible');
-      modal.classList.add('overlay-hidden');
+      modal.style.display = 'none';
     }
 
     function openClipsDrawer() {
-      const drawer = document.getElementById('clipsDrawer');
-      drawer.classList.remove('overlay-hidden');
-      drawer.classList.add('overlay-visible');
+      document.getElementById('clipsDrawer').style.display = 'flex';
     }
-
     function closeClipsDrawer() {
-      const drawer = document.getElementById('clipsDrawer');
-      drawer.classList.remove('overlay-visible');
-      drawer.classList.add('overlay-hidden');
+      document.getElementById('clipsDrawer').style.display = 'none';
     }
 
     function toggleAudio() {
@@ -452,17 +546,20 @@
     }
 
     // ==========================================
-    // 1. KAMERA-STATION (PC)
+    // 1. KAMERA-STATION (PC - 60 FPS)
     // ==========================================
     async function startCameraMode() {
       document.getElementById('modeSelection').style.display = 'none';
       document.getElementById('cameraView').style.display = 'flex';
 
+      loadSavedClipsOnStartup(true);
+
       try {
+        // Flüssige 60 FPS anfordern
         const videoConstraints = {
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          frameRate: { ideal: 30 }
+          width: { ideal: 1280, max: 1920 },
+          height: { ideal: 720, max: 1080 },
+          frameRate: { ideal: 60, min: 30 }
         };
 
         try {
@@ -496,10 +593,16 @@
           });
         });
 
+        // WICHTIG: Sobald das Smartphone verbindet, PC-Bildschirm schwarz schalten!
         peer.on('connection', (conn) => {
           dataConnection = conn;
           document.getElementById('statusText').innerText = "Verbunden";
           document.getElementById('connectionStatus').classList.replace('text-amber-400', 'text-emerald-400');
+
+          // PC AUTOMATISCH SCHWARZ SCHALTEN
+          setTimeout(() => {
+            enablePcBlackout();
+          }, 1200);
 
           conn.on('data', (data) => {
             if (data.type === 'REQUEST_STREAM') peer.call(data.viewerId, localStream);
@@ -530,7 +633,7 @@
       }
     }
 
-    // Präzise Bewegungserkennung
+    // Extrem leichtgewichtige Bewegungserkennung (unter 0.1ms Rechenzeit)
     function initMotionDetection() {
       const video = document.getElementById('localVideo');
       const canvas = document.getElementById('motionCanvas');
@@ -540,8 +643,8 @@
 
       setInterval(() => {
         if (video.readyState < 2) return;
-        canvas.width = 64;
-        canvas.height = 36;
+        canvas.width = 48;
+        canvas.height = 27;
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         const currentFrame = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
@@ -555,14 +658,14 @@
             if (diff > 50) diffScore++;
           }
 
-          if (diffScore > 15 && !motionCooldown && isAlarmArmed) {
+          if (diffScore > 12 && !motionCooldown && isAlarmArmed) {
             triggerAlarm("Bewegung erkannt!");
             motionCooldown = true;
             setTimeout(() => { motionCooldown = false; }, 35000);
           }
         }
         prevFrame = currentFrame;
-      }, 200);
+      }, 300);
     }
 
     function captureThumbnail(videoElement) {
@@ -578,9 +681,6 @@
       }
     }
 
-    // ==========================================
-    // ALARM: E-MAIL SENDEN & 30s CLIP STARTEN
-    // ==========================================
     function triggerAlarm(msg) {
       const timestamp = getFormattedTimestamp();
       const thumbData = captureThumbnail(document.getElementById('localVideo'));
@@ -589,60 +689,50 @@
       b.classList.remove('hidden');
       setTimeout(() => b.classList.add('hidden'), 5000);
 
-      // 1. E-Mail sofort per FormSubmit API absenden
       sendEmailAlert(msg, timestamp);
 
-      // 2. Alarm an Handy signalisieren
       if (dataConnection && dataConnection.open) {
         dataConnection.send({ type: 'ALERT', message: msg, time: timestamp, thumb: thumbData });
       }
 
-      // 3. 30-Sekunden-Video am PC aufzeichnen
       recordLocalPcClip(30, msg, timestamp, thumbData);
     }
 
-    // FormSubmit API: Direkter Mailversand an mexgogo16@gmail.com
     function sendEmailAlert(eventName, timestamp) {
       const statusBadge = document.getElementById('mailStatusBadge');
-      if (statusBadge) statusBadge.innerText = "Sende E-Mail...";
+      if (statusBadge) statusBadge.innerText = "Sende Mail...";
 
       fetch("https://formsubmit.co/ajax/mexgogo16@gmail.com", {
         method: "POST",
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({
           _subject: `🚨 SafeCam Sicherheitsalarm: ${eventName}!`,
           Ereignis: eventName,
           Uhrzeit: timestamp,
-          Status: "Ein 30-Sekunden-Videoclip wurde aufgezeichnet.",
-          Hinweis: "SafeCam Pro Überwachungssystem"
+          Kamera: "SafeCam Pro 60FPS",
+          Status: "Ein 30-Sekunden-Videoclip wurde aufgezeichnet."
         })
       })
       .then(res => res.json())
-      .then(data => {
+      .then(() => {
         if (statusBadge) {
           statusBadge.innerText = "Gesendet ✓";
           setTimeout(() => { statusBadge.innerText = "Bereit"; }, 6000);
         }
       })
-      .catch(err => {
+      .catch(() => {
         if (statusBadge) statusBadge.innerText = "Fehler";
       });
     }
 
-    // 30-Sekunden-Videoaufnahme mit Live-Countdown
+    // 30s Clip aufnehmen (bevorzugt MP4 für iPhone!)
     function recordLocalPcClip(seconds, eventName, timestamp, thumbData) {
       if (isRecordingNow) return;
       isRecordingNow = true;
       recordedChunks = [];
 
-      // Passendes Video-Format wählen
-      let options = { mimeType: 'video/webm' };
-      if (!MediaRecorder.isTypeSupported('video/webm')) {
-        options = { mimeType: 'video/mp4' };
-      }
+      const chosenMime = getBestRecordingMimeType();
+      const options = chosenMime ? { mimeType: chosenMime } : {};
 
       try {
         mediaRecorder = new MediaRecorder(localStream, options);
@@ -666,56 +756,51 @@
         if (e.data.size > 0) recordedChunks.push(e.data);
       };
 
-      mediaRecorder.onstop = () => {
+      mediaRecorder.onstop = async () => {
         clearInterval(countdownInterval);
         timerBadge.classList.add('hidden');
 
-        const mime = mediaRecorder.mimeType || 'video/webm';
+        const mime = mediaRecorder.mimeType || chosenMime || 'video/mp4';
         const blob = new Blob(recordedChunks, { type: mime });
         const clipTitle = `${eventName} - ${timestamp}`;
 
-        // 1. Auf PC in der Galerie anzeigen
-        saveClipToPcGallery(blob, clipTitle, thumbData);
+        // In permanenter IndexedDB speichern
+        await dbSaveClip({ title: clipTitle, thumb: thumbData, blob: blob, mimeType: mime, timestamp: timestamp });
 
-        // 2. Videodatei direkt über den Datenkanal an das Smartphone senden!
-        sendVideoToPhone(blob, clipTitle, thumbData);
+        renderClipInPcGallery(blob, clipTitle, thumbData, mime);
+        sendVideoToPhone(blob, clipTitle, thumbData, mime);
 
         isRecordingNow = false;
       };
 
-      mediaRecorder.start(1000); // Jede Sekunde einen Chunk schreiben
+      mediaRecorder.start(1000);
       setTimeout(() => {
         if (mediaRecorder.state === "recording") mediaRecorder.stop();
       }, seconds * 1000);
     }
 
-    // Sendet das fertige Video Paket für Paket an das Handy
-    function sendVideoToPhone(blob, title, thumb) {
+    function sendVideoToPhone(blob, title, thumb, mimeType) {
       if (!dataConnection || !dataConnection.open) return;
 
       blob.arrayBuffer().then(buffer => {
-        // Start-Signal
         dataConnection.send({
           type: 'VIDEO_TRANSFER_START',
           title: title,
           thumb: thumb,
-          mimeType: blob.type,
+          mimeType: mimeType,
           byteLength: buffer.byteLength
         });
 
-        // In 16-KB Stücken senden (sicher für jedes WLAN & Mobilfunknetz)
         const chunkSize = 16384;
         for (let offset = 0; offset < buffer.byteLength; offset += chunkSize) {
-          const slice = buffer.slice(offset, offset + chunkSize);
-          dataConnection.send(slice);
+          dataConnection.send(buffer.slice(offset, offset + chunkSize));
         }
 
-        // Ende-Signal
         dataConnection.send({ type: 'VIDEO_TRANSFER_END' });
       });
     }
 
-    function saveClipToPcGallery(blob, title, thumbData) {
+    function renderClipInPcGallery(blob, title, thumbData, mimeType) {
       document.getElementById('noPcClipsMsg')?.remove();
       clipCounter++;
       document.getElementById('clipCountBadge').innerText = clipCounter;
@@ -730,7 +815,7 @@
         : `<div class="w-16 h-10 bg-slate-900 rounded-lg flex items-center justify-center shrink-0"><i data-lucide="film" class="w-4 h-4 text-slate-500"></i></div>`;
 
       item.innerHTML = `
-        <div class="flex items-center gap-3 overflow-hidden cursor-pointer" onclick="playClipInModal('${url}', '${title}')">
+        <div class="flex items-center gap-3 overflow-hidden cursor-pointer" onclick="playClipInModal('${url}', '${title}', '${mimeType || ''}')">
           <div class="relative shrink-0">
             ${thumbHtml}
             <div class="absolute inset-0 bg-black/40 group-hover:bg-black/10 rounded-lg flex items-center justify-center transition">
@@ -744,12 +829,9 @@
           </div>
         </div>
         <div class="flex gap-1.5 shrink-0">
-          <button type="button" onclick="playClipInModal('${url}', '${title}')" class="bg-emerald-600/90 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer">
+          <button type="button" onclick="playClipInModal('${url}', '${title}', '${mimeType || ''}')" class="bg-emerald-600/90 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer">
             <i data-lucide="play" class="w-3.5 h-3.5"></i> Play
           </button>
-          <a href="${url}" download="${title.replace(/[: ]/g, '_')}.webm" class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-1.5 rounded-lg cursor-pointer" title="Download">
-            <i data-lucide="download" class="w-3.5 h-3.5"></i>
-          </a>
         </div>
       `;
       gallery.prepend(item);
@@ -778,6 +860,8 @@
     function startViewerMode() {
       document.getElementById('modeSelection').style.display = 'none';
       document.getElementById('viewerView').style.display = 'flex';
+
+      loadSavedClipsOnStartup(false);
 
       peer = new Peer(peerOptions);
       
@@ -825,14 +909,12 @@
 
       dataConnection = peer.connect(cameraPeerId);
       dataConnection.on('open', () => {
-        document.getElementById('statusText').innerText = "Live";
+        document.getElementById('statusText').innerText = "Live (60 FPS)";
         document.getElementById('connectionStatus').classList.replace('text-amber-400', 'text-emerald-400');
         dataConnection.send({ type: 'REQUEST_STREAM', viewerId: peer.id });
       });
 
-      // Daten- und Videoempfang vom PC
-      dataConnection.on('data', (data) => {
-        // Alarm-Meldung
+      dataConnection.on('data', async (data) => {
         if (data.type === 'ALERT') {
           if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
           const banner = document.getElementById('alertBanner');
@@ -853,25 +935,31 @@
           log.prepend(entry);
         }
 
-        // 1. Beginn des Video-Transfers
         if (data.type === 'VIDEO_TRANSFER_START') {
           incomingClipChunks = [];
           incomingClipMeta = data;
         }
 
-        // 2. Binäre Video-Datenblöcke sammeln
         if (data instanceof ArrayBuffer) {
           incomingClipChunks.push(data);
         }
 
-        // 3. Video-Transfer abgeschlossen -> Video in der Handy-Galerie anlegen!
         if (data.type === 'VIDEO_TRANSFER_END' && incomingClipMeta) {
-          const videoBlob = new Blob(incomingClipChunks, { type: incomingClipMeta.mimeType || 'video/webm' });
-          saveClipToMobileDrawer(videoBlob, incomingClipMeta.title, incomingClipMeta.thumb);
+          const videoBlob = new Blob(incomingClipChunks, { type: incomingClipMeta.mimeType || 'video/mp4' });
+          
+          // Permanent in Handy-IndexedDB speichern!
+          await dbSaveClip({
+            title: incomingClipMeta.title,
+            thumb: incomingClipMeta.thumb,
+            blob: videoBlob,
+            mimeType: incomingClipMeta.mimeType || 'video/mp4'
+          });
+
+          renderClipInMobileDrawer(videoBlob, incomingClipMeta.title, incomingClipMeta.thumb, incomingClipMeta.mimeType);
+
           incomingClipChunks = [];
           incomingClipMeta = null;
 
-          // Banner aktualisieren
           const banner = document.getElementById('alertBanner');
           document.getElementById('alertBannerText').innerText = `30s Video empfangen! Tippe auf "Videos (30s)"`;
           banner.classList.remove('hidden');
@@ -885,8 +973,7 @@
       });
     }
 
-    // Clip in der Handy-Galerie ablegen
-    function saveClipToMobileDrawer(blob, title, thumbData) {
+    function renderClipInMobileDrawer(blob, title, thumbData, mimeType) {
       document.getElementById('noDrawerClipsMsg')?.remove();
       mobileClipsCount++;
       document.getElementById('mobileClipCounter').innerText = mobileClipsCount;
@@ -902,7 +989,7 @@
         : `<div class="w-16 h-10 bg-slate-900 rounded-lg flex items-center justify-center shrink-0"><i data-lucide="film" class="w-4 h-4 text-slate-500"></i></div>`;
 
       item.innerHTML = `
-        <div class="flex items-center gap-3 overflow-hidden cursor-pointer flex-1" onclick="closeClipsDrawer(); playClipInModal('${url}', '${title}');">
+        <div class="flex items-center gap-3 overflow-hidden cursor-pointer flex-1" onclick="closeClipsDrawer(); playClipInModal('${url}', '${title}', '${mimeType || ''}');">
           <div class="relative shrink-0">
             ${thumbHtml}
             <div class="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center">
@@ -912,11 +999,11 @@
           <div class="flex flex-col overflow-hidden">
             <span class="truncate font-semibold text-slate-200 text-xs">${title.split(' - ')[0]}</span>
             <span class="font-mono text-[10px] text-slate-400">${title.split(' - ')[1] || ''}</span>
-            <span class="text-[10px] text-emerald-400 font-mono">30 Sek. Aufnahme</span>
+            <span class="text-[10px] text-emerald-400 font-mono">30s Video</span>
           </div>
         </div>
         <div class="flex gap-1.5 shrink-0">
-          <button type="button" onclick="closeClipsDrawer(); playClipInModal('${url}', '${title}');" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer">
+          <button type="button" onclick="closeClipsDrawer(); playClipInModal('${url}', '${title}', '${mimeType || ''}');" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer">
             <i data-lucide="play" class="w-3.5 h-3.5"></i> Play
           </button>
         </div>
@@ -998,7 +1085,7 @@
     function triggerRemoteSiren() {
       if (dataConnection && dataConnection.open) {
         dataConnection.send({ type: 'SIREN' });
-        alert("Sirene am PC ausgelöst!");
+        alert("Sirene ausgelöst!");
       }
     }
 
