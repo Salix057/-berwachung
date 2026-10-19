@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>HomeGuard - Smart Security</title>
+  <title>SafeCam Pro - Web Surveillance</title>
   
-  <!-- Tailwind CSS & Lucide Icons -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
@@ -13,28 +12,32 @@
   <script src="https://unpkg.com/html5-qrcode"></script>
 
   <style>
-    /* Sanfter Nachtsicht-Filter */
-    .night-vision-mode {
-      filter: brightness(2.2) contrast(1.7) grayscale(1) !important;
+    /* Absolute Klicksicherheit: display: none überschreibt alles */
+    .view-hidden {
+      display: none !important;
+    }
+    .clean-night-vision {
+      filter: brightness(2.2) contrast(1.3) !important;
     }
   </style>
 </head>
-<body class="bg-neutral-900 text-neutral-100 min-h-screen flex flex-col font-sans select-none antialiased">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans select-none overflow-x-hidden">
 
-  <!-- Apple / Smart-Home Style Header -->
-  <header class="bg-neutral-900/80 backdrop-blur-md border-b border-neutral-800 px-5 py-3.5 flex justify-between items-center sticky top-0 z-30">
-    <div class="flex items-center gap-2.5">
-      <div class="bg-blue-600/10 text-blue-500 p-2 rounded-xl">
-        <i data-lucide="video" class="w-5 h-5"></i>
-      </div>
-      <div>
-        <h1 class="text-sm font-semibold tracking-tight text-white">HomeGuard</h1>
-        <p class="text-[11px] text-neutral-400">Wohnbereich Überwachung</p>
-      </div>
+  <!-- ========================================== -->
+  <!-- PC TARN-MODUS OVERLAY (STANDARDFELD: AUS)  -->
+  <!-- ========================================== -->
+  <div id="pcBlackoutOverlay" ondblclick="togglePcBlackout()" style="display: none;" class="fixed inset-0 bg-black z-50 cursor-none flex items-center justify-center">
+    <span class="text-neutral-900 text-xs select-none pointer-events-none">SafeCam Active [ESC drücken zum Aufwecken]</span>
+  </div>
+
+  <!-- Header -->
+  <header class="bg-slate-900 border-b border-slate-800 px-4 py-3 flex justify-between items-center z-20">
+    <div class="flex items-center gap-2">
+      <i data-lucide="shield-check" class="w-6 h-6 text-emerald-500"></i>
+      <h1 class="text-lg font-bold tracking-wider uppercase text-emerald-400">SafeCam <span class="text-xs px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">Ultra 60FPS</span></h1>
     </div>
-    
-    <div id="statusBadge" class="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-neutral-800 text-neutral-300 border border-neutral-700/50">
-      <span class="w-2 h-2 rounded-full bg-amber-500" id="statusDot"></span>
+    <div id="connectionStatus" class="flex items-center gap-2 text-xs font-mono text-amber-400 bg-slate-950 px-3 py-1.5 rounded-full border border-slate-800">
+      <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
       <span id="statusText">Bereit</span>
     </div>
   </header>
@@ -42,137 +45,618 @@
   <!-- ========================================== -->
   <!-- MODUS-AUSWAHL (STARTBILDSCHIRM)            -->
   <!-- ========================================== -->
-  <div id="modeSelection" class="flex-1 flex flex-col items-center justify-center p-6 max-w-sm mx-auto w-full gap-5">
-    <div class="text-center space-y-1.5 mb-2">
-      <h2 class="text-2xl font-bold tracking-tight text-white">Gerät einrichten</h2>
-      <p class="text-xs text-neutral-400">Wähle die Funktion für dieses Gerät aus</p>
+  <div id="modeSelection" class="flex-1 flex flex-col items-center justify-center p-6 gap-6 max-w-md mx-auto w-full z-10">
+    <div class="text-center space-y-2">
+      <h2 class="text-2xl font-bold text-slate-100">Geräte-Modus wählen</h2>
+      <p class="text-sm text-slate-400">Wähle die Rolle dieses Geräts:</p>
     </div>
 
-    <!-- Als Kamera nutzen -->
-    <button onclick="startCameraMode()" class="w-full bg-neutral-800 hover:bg-neutral-750 active:scale-[0.98] transition-all p-5 rounded-3xl border border-neutral-700/60 shadow-xl flex items-center gap-4 text-left">
-      <div class="bg-blue-600 text-white p-3.5 rounded-2xl shadow-lg shadow-blue-600/30">
-        <i data-lucide="webcam" class="w-7 h-7"></i>
+    <!-- Knopf 1: PC Kamera -->
+    <button type="button" onclick="startCameraMode()" class="w-full bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 active:scale-95 p-5 rounded-2xl flex items-center gap-4 shadow-xl border border-emerald-500/30 transition-all text-left cursor-pointer">
+      <div class="bg-slate-900/60 p-3 rounded-xl border border-emerald-400/20 shrink-0 pointer-events-none">
+        <i data-lucide="webcam" class="w-8 h-8 text-emerald-400"></i>
       </div>
-      <div>
-        <div class="font-semibold text-base text-white">Als Kamera nutzen</div>
-        <div class="text-xs text-neutral-400 mt-0.5">Streamt Webcam & Audio vom PC</div>
+      <div class="pointer-events-none">
+        <div class="font-bold text-lg text-white">Kamera-Station (PC)</div>
+        <div class="text-xs text-emerald-200">Feste ID, 60 FPS, lokaler Speicher & Push</div>
       </div>
     </button>
 
-    <!-- Als Monitor nutzen -->
-    <button onclick="startViewerMode()" class="w-full bg-neutral-800 hover:bg-neutral-750 active:scale-[0.98] transition-all p-5 rounded-3xl border border-neutral-700/60 shadow-xl flex items-center gap-4 text-left">
-      <div class="bg-neutral-700 text-white p-3.5 rounded-2xl">
-        <i data-lucide="smartphone" class="w-7 h-7"></i>
+    <!-- Knopf 2: Handy Monitor -->
+    <button type="button" onclick="startViewerMode()" class="w-full bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 active:scale-95 p-5 rounded-2xl flex items-center gap-4 shadow-xl border border-blue-500/30 transition-all text-left cursor-pointer">
+      <div class="bg-slate-900/60 p-3 rounded-xl border border-blue-400/20 shrink-0 pointer-events-none">
+        <i data-lucide="smartphone" class="w-8 h-8 text-blue-400"></i>
       </div>
-      <div>
-        <div class="font-semibold text-base text-white">Als Monitor öffnen</div>
-        <div class="text-xs text-neutral-400 mt-0.5">Live-Bild empfangen & steuern</div>
+      <div class="pointer-events-none">
+        <div class="font-bold text-lg text-white">Monitor-Viewer (Handy)</div>
+        <div class="text-xs text-blue-200">Live-Bild, Gegensprechanlage & Auto-Connect</div>
       </div>
     </button>
   </div>
 
   <!-- ========================================== -->
-  <!-- KAMERA-STATION (PC-ANSICHT)                -->
+  <!-- KAMERA-STATION (PC-ANSICHT)                 -->
   <!-- ========================================== -->
-  <div id="cameraView" class="hidden flex-1 p-4 md:p-6 max-w-5xl mx-auto w-full grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <div class="lg:col-span-2 space-y-4">
-      <div class="relative bg-black rounded-3xl overflow-hidden shadow-2xl aspect-video border border-neutral-800 flex items-center justify-center">
-        <video id="localVideo" autoplay playsinline muted class="w-full h-full object-cover"></video>
+  <div id="cameraView" style="display: none;" class="flex-1 flex-col p-4 gap-4 max-w-6xl mx-auto w-full">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1">
+      <div class="lg:col-span-2 relative bg-black rounded-2xl overflow-hidden border border-slate-800 shadow-2xl flex items-center justify-center min-h-[380px]">
+        <video id="localVideo" autoplay playsinline muted class="w-full h-full object-contain bg-black"></video>
         <canvas id="motionCanvas" class="hidden"></canvas>
 
-        <!-- Modernes OSD -->
-        <div class="absolute top-4 left-4 flex items-center gap-2 bg-neutral-900/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-xs font-medium">
-          <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-          <span class="text-white" id="camOsdTime">00:00:00</span>
+        <div class="absolute top-3 left-3 bg-black/60 backdrop-blur px-3 py-1.5 rounded-lg border border-slate-700 font-mono text-xs flex flex-col">
+          <span class="text-red-500 font-bold flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span> 60 FPS LIVE
+          </span>
+          <span id="camOsdTime" class="text-slate-200">0000-00-00 00:00:00</span>
         </div>
 
-        <div class="absolute top-4 right-4 flex gap-2">
-          <div id="motionBadge" class="hidden bg-amber-500 text-neutral-950 font-bold px-3 py-1 rounded-full text-xs shadow-lg">
-            Bewegung
+        <div class="absolute top-3 right-3 flex gap-2">
+          <div id="motionBadge" class="hidden bg-amber-500 text-black px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider animate-pulse flex items-center gap-1">
+            <i data-lucide="activity" class="w-3.5 h-3.5"></i> Bewegung
           </div>
-          <div id="noiseBadge" class="hidden bg-rose-500 text-white font-bold px-3 py-1 rounded-full text-xs shadow-lg">
-            Lärm
+          <div id="noiseBadge" class="hidden bg-rose-500 text-white px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider animate-pulse flex items-center gap-1">
+            <i data-lucide="volume-2" class="w-3.5 h-3.5"></i> Geräusch
           </div>
         </div>
-        <div id="screenTorchOverlay" class="absolute inset-0 bg-white opacity-0 pointer-events-none transition-opacity duration-300 z-50"></div>
+        <div id="screenTorchOverlay" class="absolute inset-0 bg-white opacity-0 pointer-events-none transition-opacity duration-300 z-40"></div>
       </div>
 
-      <div class="bg-neutral-800/60 backdrop-blur border border-neutral-700/40 p-4 rounded-2xl flex items-center justify-between text-xs text-neutral-400">
-        <span>Status: <strong class="text-neutral-200" id="pcStatusSub">Warte auf Verbindung...</strong></span>
-        <span>Sensoren: <strong class="text-emerald-400">Aktiviert</strong></span>
-      </div>
-    </div>
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col gap-4">
+        <div class="flex justify-between items-center">
+          <h3 class="font-bold text-slate-200 flex items-center gap-2">
+            <i data-lucide="link" class="w-5 h-5 text-emerald-400"></i> Feste Geräte-ID
+          </h3>
+          <button onclick="togglePcBlackout()" class="bg-slate-800 hover:bg-slate-700 text-xs px-2.5 py-1 rounded border border-slate-700 flex items-center gap-1 text-slate-300">
+            <i data-lucide="eye-off" class="w-3.5 h-3.5"></i> Tarnung
+          </button>
+        </div>
 
-    <!-- QR-Kopplung -->
-    <div class="bg-neutral-800/80 backdrop-blur border border-neutral-700/50 rounded-3xl p-6 flex flex-col items-center justify-center text-center gap-4">
-      <div>
-        <h3 class="font-semibold text-white text-base">Handy verbinden</h3>
-        <p class="text-xs text-neutral-400 mt-1">Scanne diesen Code mit der Kamera deines Smartphones</p>
-      </div>
+        <div class="bg-white p-3 rounded-xl mx-auto flex items-center justify-center" id="qrcode"></div>
+        <div class="text-center">
+          <div class="text-xs text-slate-400">Kamera-ID:</div>
+          <div id="cameraPeerIdDisplay" class="font-mono text-emerald-400 font-bold text-sm tracking-wider bg-slate-950 p-2 rounded-lg mt-1 border border-slate-800 select-all cursor-pointer">
+            Lade...
+          </div>
+        </div>
 
-      <div class="bg-white p-3.5 rounded-2xl shadow-xl" id="qrcode"></div>
+        <!-- Push & E-Mail Config -->
+        <div class="border-t border-slate-800 pt-3 space-y-2">
+          <h4 class="text-xs font-bold uppercase text-slate-400 flex items-center gap-1.5">
+            <i data-lucide="bell-ring" class="w-4 h-4 text-emerald-400"></i> Handy-Push & E-Mail
+          </h4>
+          <input type="text" id="pushTopicInput" placeholder="Push-Kanal (z. B. cam99)" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs font-mono text-emerald-300 focus:outline-none focus:border-emerald-500">
+          <input type="email" id="pushEmailInput" placeholder="Alarm-E-Mail (optional)" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs font-mono text-slate-200 focus:outline-none focus:border-emerald-500">
+        </div>
 
-      <div class="w-full pt-2">
-        <div class="text-[11px] text-neutral-400 mb-1">Verbindungs-ID:</div>
-        <div id="cameraPeerIdDisplay" class="bg-neutral-900 font-mono text-xs text-neutral-300 py-2 px-3 rounded-xl border border-neutral-700/60 select-all cursor-pointer">
-          Lade ID...
+        <div class="border-t border-slate-800 pt-3 flex-1 flex flex-col">
+          <h4 class="text-xs font-bold uppercase text-slate-400 mb-2 flex items-center gap-1.5">
+            <i data-lucide="hard-drive" class="w-4 h-4 text-emerald-400"></i> Lokale Aufnahmen
+          </h4>
+          <div id="pcClipsGallery" class="overflow-y-auto max-h-40 space-y-2 pr-1 text-xs">
+            <div id="noPcClipsMsg" class="text-slate-500 py-2 text-center">Keine Alarme.</div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
   <!-- ========================================== -->
-  <!-- MONITOR-VIEWER (HANDY-ANSICHT)             -->
+  <!-- MONITOR-VIEWER (HANDY-ANSICHT)              -->
   <!-- ========================================== -->
-  <div id="viewerView" class="hidden flex-1 max-w-md mx-auto w-full p-4 flex flex-col gap-4">
+  <div id="viewerView" style="display: none;" class="flex-1 flex-col max-w-4xl mx-auto w-full p-2 md:p-4 gap-3">
     
-    <!-- Kopplungs-Karte (falls nicht verbunden) -->
-    <div id="viewerConnectCard" class="bg-neutral-800 border border-neutral-700/60 rounded-3xl p-6 space-y-4 shadow-xl">
-      <div class="text-center space-y-1">
-        <h3 class="text-lg font-bold text-white">Kamera verbinden</h3>
-        <p class="text-xs text-neutral-400">Scanne den QR-Code auf deinem PC</p>
-      </div>
-      <div id="reader" class="rounded-2xl overflow-hidden border border-neutral-700 max-w-[240px] mx-auto"></div>
-      <div class="flex gap-2 pt-2">
-        <input type="text" id="targetPeerId" placeholder="Code eingeben..." class="flex-1 bg-neutral-900 border border-neutral-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500">
-        <button onclick="initiateConnection(document.getElementById('targetPeerId').value)" class="bg-blue-600 hover:bg-blue-500 active:scale-95 px-4 py-2.5 rounded-xl font-semibold text-xs text-white">Verbinden</button>
+    <div id="viewerConnectCard" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+      <h3 class="text-lg font-bold text-white flex items-center gap-2">
+        <i data-lucide="scan-line" class="w-5 h-5 text-blue-400"></i> Kamera koppeln
+      </h3>
+      <div id="reader" class="rounded-xl overflow-hidden border border-slate-700 max-w-sm mx-auto"></div>
+      <div class="flex gap-2">
+        <input type="text" id="targetPeerId" placeholder="Code eingeben..." class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 font-mono text-sm focus:outline-none focus:border-blue-500">
+        <button onclick="initiateConnection(document.getElementById('targetPeerId').value)" class="bg-blue-600 hover:bg-blue-500 px-5 py-2.5 rounded-xl font-bold text-sm">Verbinden</button>
       </div>
     </div>
 
-    <!-- Live-Videoplayer -->
-    <div id="liveStreamWrapper" class="relative bg-black rounded-3xl overflow-hidden shadow-2xl aspect-video w-full flex items-center justify-center border border-neutral-800">
-      <!-- Wichtig: muted = true garantiert sofortigen Start ohne Blockade! -->
-      <video id="remoteVideo" autoplay playsinline muted class="w-full h-full object-cover"></video>
+    <!-- Live Monitor Feed -->
+    <div id="liveStreamWrapper" class="relative bg-black rounded-2xl overflow-hidden border border-slate-800 shadow-2xl aspect-video w-full flex items-center justify-center">
+      <video id="remoteVideo" autoplay playsinline class="w-full h-full object-contain bg-black"></video>
 
-      <!-- OSD Zeit & Status -->
-      <div class="absolute top-3 left-3 flex items-center gap-2 bg-neutral-900/70 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 text-[11px] font-medium text-white">
-        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-        <span id="remoteOsdTime">Live</span>
-      </div>
-
-      <!-- Ton Umschalt-Button (oben rechts) -->
-      <button id="audioToggleBtn" onclick="toggleAudioMute()" class="absolute top-3 right-3 bg-neutral-900/80 backdrop-blur-md hover:bg-neutral-800 border border-white/15 px-3 py-1 rounded-full text-xs font-semibold text-white flex items-center gap-1.5 shadow-md">
-        <i data-lucide="volume-x" class="w-3.5 h-3.5 text-rose-400" id="audioIcon"></i>
-        <span id="audioText">Ton an</span>
+      <button id="unmuteOverlayBtn" onclick="unlockVideoPlayback()" style="display: none;" class="absolute inset-0 z-30 bg-black/85 flex flex-col items-center justify-center gap-3">
+        <div class="bg-emerald-600 p-4 rounded-full shadow-lg animate-bounce">
+          <i data-lucide="play" class="w-8 h-8 text-white"></i>
+        </div>
+        <span class="text-sm font-bold text-white tracking-wide">Tippen für 60 FPS Live-Stream</span>
       </button>
 
-      <!-- Nachtsicht-Badge -->
-      <div id="nightVisionBadge" class="hidden absolute bottom-3 left-3 bg-indigo-500/90 text-white px-2.5 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1">
-        <i data-lucide="moon" class="w-3 h-3"></i> NACHTSICHT
+      <div class="absolute top-3 left-3 bg-black/60 backdrop-blur px-3 py-1 rounded border border-slate-700 font-mono text-xs text-slate-100 flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span id="remoteOsdTime">--:--:--</span>
       </div>
 
-      <!-- Alarm-Benachrichtigung (Banner) -->
-      <div id="alertBanner" class="hidden absolute top-12 inset-x-3 bg-rose-600/95 backdrop-blur-md text-white p-3 rounded-2xl shadow-xl flex items-center justify-between z-30 transition-all">
-        <div class="flex items-center gap-2.5">
-          <i data-lucide="bell" class="w-5 h-5 text-white"></i>
-          <div>
-            <div class="text-xs font-bold" id="alertBannerText">Bewegung erkannt</div>
-            <div class="text-[10px] text-rose-200" id="alertBannerTime">Gerade eben</div>
-          </div>
+      <div id="alertBanner" class="hidden absolute bottom-4 inset-x-4 bg-rose-600/95 backdrop-blur text-white p-3 rounded-xl border border-rose-400 font-bold text-sm flex items-center justify-between shadow-2xl animate-pulse">
+        <div class="flex items-center gap-2">
+          <i data-lucide="bell" class="w-5 h-5"></i>
+          <span id="alertBannerText">Bewegung erkannt!</span>
         </div>
-        <button onclick="document.getElementById('alertBanner').classList.add('hidden')" class="bg-white/20 hover:bg-white/30 text-white rounded-xl px-2.5 py-1 text-xs">OK</button>
+        <button onclick="document.getElementById('alertBanner').classList.add('hidden')" class="bg-white/20 px-2.5 py-1 rounded text-xs">OK</button>
       </div>
     </div>
 
-    <!-- Steuerungspanel (Modernes Grid) -->
-    <div class="grid grid-cols-4 gap-2.5
+    <!-- Steuerung -->
+    <div class="grid grid-cols-4 gap-2 bg-slate-900 border border-slate-800 p-3 rounded-2xl">
+      <button id="pttBtn" class="col-span-2 bg-slate-800 active:bg-emerald-600 border border-slate-700 p-3 rounded-xl flex flex-col items-center justify-center gap-1 select-none">
+        <i data-lucide="mic" class="w-6 h-6 text-emerald-400"></i>
+        <span class="text-xs font-bold text-slate-200">Sprechen (Halten)</span>
+      </button>
+
+      <button id="alarmToggleBtn" onclick="toggleAlarmArming()" class="col-span-2 bg-emerald-950/80 border border-emerald-700 p-3 rounded-xl flex flex-col items-center justify-center gap-1">
+        <i data-lucide="bell" class="w-6 h-6 text-emerald-400" id="alarmToggleIcon"></i>
+        <span class="text-xs font-bold text-emerald-300" id="alarmToggleText">Alarme: AN</span>
+      </button>
+
+      <button onclick="toggleCleanNightVision()" class="bg-slate-800 active:scale-95 border border-slate-700 p-3 rounded-xl flex flex-col items-center justify-center gap-1">
+        <i data-lucide="sun" class="w-6 h-6 text-amber-400"></i>
+        <span class="text-xs font-bold text-slate-200">Helligkeit</span>
+      </button>
+
+      <button onclick="triggerRemoteSiren()" class="bg-slate-800 active:scale-95 border border-slate-700 p-3 rounded-xl flex flex-col items-center justify-center gap-1">
+        <i data-lucide="megaphone" class="w-6 h-6 text-rose-500"></i>
+        <span class="text-xs font-bold text-slate-200">Sirene</span>
+      </button>
+
+      <button onclick="triggerRemoteTorch()" class="bg-slate-800 active:scale-95 border border-slate-700 p-3 rounded-xl flex flex-col items-center justify-center gap-1">
+        <i data-lucide="flashlight" class="w-6 h-6 text-yellow-400"></i>
+        <span class="text-xs font-bold text-slate-200">Licht</span>
+      </button>
+
+      <button onclick="forgetSavedCam()" class="bg-slate-800 active:scale-95 border border-slate-700 p-3 rounded-xl flex flex-col items-center justify-center gap-1" title="Entkoppeln">
+        <i data-lucide="trash-2" class="w-6 h-6 text-red-400"></i>
+        <span class="text-xs font-bold text-slate-200">Reset</span>
+      </button>
+    </div>
+
+    <!-- Ereignis-Protokoll -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex-1 flex flex-col">
+      <div class="flex justify-between items-center mb-2">
+        <h4 class="font-bold text-sm text-slate-200 flex items-center gap-2">
+          <i data-lucide="history" class="w-4 h-4 text-emerald-400"></i> Ereignisse
+        </h4>
+      </div>
+      <div id="mobileEventLog" class="flex-1 overflow-y-auto max-h-44 space-y-2 pr-1 text-xs">
+        <div id="noEventsMsg" class="text-center py-3 text-slate-500">Keine neuen Alarme.</div>
+      </div>
+    </div>
+  </div>
+
+  <audio id="remoteAudioPlayer" autoplay></audio>
+
+  <script>
+    // Sichere Icon-Initialisierung
+    window.addEventListener('DOMContentLoaded', () => {
+      try { if (window.lucide) lucide.createIcons(); } catch(e) {}
+    });
+
+    let peer = null;
+    let dataConnection = null;
+    let localStream = null;
+    let mediaRecorder = null;
+    let recordedChunks = [];
+    let isBrightened = false;
+    let isAlarmArmed = true;
+
+    function getFormattedTimestamp() {
+      const now = new Date();
+      return now.getFullYear() + "-" + 
+        String(now.getMonth()+1).padStart(2, '0') + "-" + 
+        String(now.getDate()).padStart(2, '0') + " " + 
+        String(now.getHours()).padStart(2, '0') + ":" + 
+        String(now.getMinutes()).padStart(2, '0') + ":" + 
+        String(now.getSeconds()).padStart(2, '0');
+    }
+
+    setInterval(() => {
+      const ts = getFormattedTimestamp();
+      const pcOsd = document.getElementById('camOsdTime');
+      const viewerOsd = document.getElementById('remoteOsdTime');
+      if (pcOsd) pcOsd.innerText = ts;
+      if (viewerOsd) viewerOsd.innerText = ts;
+    }, 1000);
+
+    // Klick- und Tastensichere Tarnmodus-Umschaltung
+    function togglePcBlackout() {
+      const overlay = document.getElementById('pcBlackoutOverlay');
+      overlay.style.display = (overlay.style.display === 'none' || overlay.style.display === '') ? 'flex' : 'none';
+    }
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') togglePcBlackout();
+    });
+
+    // ==========================================
+    // 1. KAMERA-STATION (PC)
+    // ==========================================
+    async function startCameraMode() {
+      document.getElementById('modeSelection').style.display = 'none';
+      const camView = document.getElementById('cameraView');
+      camView.style.display = 'flex';
+
+      const savedTopic = localStorage.getItem('safecam_push_topic') || 'safecam-' + Math.random().toString(36).substring(2, 8);
+      document.getElementById('pushTopicInput').value = savedTopic;
+      document.getElementById('pushTopicInput').onchange = (e) => localStorage.setItem('safecam_push_topic', e.target.value.trim());
+
+      const savedEmail = localStorage.getItem('safecam_push_email') || '';
+      document.getElementById('pushEmailInput').value = savedEmail;
+      document.getElementById('pushEmailInput').onchange = (e) => localStorage.setItem('safecam_push_email', e.target.value.trim());
+
+      try {
+        const videoConstraints = {
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+          frameRate: { ideal: 60, min: 30 }
+        };
+
+        try {
+          localStream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints, audio: true });
+        } catch(e) {
+          localStream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints, audio: false });
+        }
+
+        document.getElementById('localVideo').srcObject = localStream;
+
+        let fixedPcId = localStorage.getItem('safecam_fixed_id');
+        if (!fixedPcId) {
+          fixedPcId = 'safecam-' + Math.random().toString(36).substring(2, 9);
+          localStorage.setItem('safecam_fixed_id', fixedPcId);
+        }
+
+        peer = new Peer(fixedPcId);
+        
+        peer.on('open', (id) => {
+          document.getElementById('cameraPeerIdDisplay').innerText = id;
+          document.getElementById('statusText').innerText = "Warte auf Handy...";
+          
+          const viewerUrl = window.location.origin + window.location.pathname + "#connect=" + id;
+          document.getElementById("qrcode").innerHTML = "";
+          new QRCode(document.getElementById("qrcode"), {
+            text: viewerUrl,
+            width: 170,
+            height: 170,
+            colorDark : "#020617",
+            colorLight : "#ffffff"
+          });
+        });
+
+        peer.on('connection', (conn) => {
+          dataConnection = conn;
+          document.getElementById('statusText').innerText = "Aktiv";
+          document.getElementById('connectionStatus').classList.replace('text-amber-400', 'text-emerald-400');
+
+          setTimeout(() => {
+            document.getElementById('pcBlackoutOverlay').style.display = 'flex';
+          }, 1200);
+
+          conn.on('data', (data) => {
+            if (data.type === 'REQUEST_STREAM') peer.call(data.viewerId, localStream);
+            if (data.type === 'ARM_STATUS') isAlarmArmed = data.armed;
+            if (data.type === 'SIREN') playLocalSiren();
+            if (data.type === 'TORCH') {
+              const torch = document.getElementById('screenTorchOverlay');
+              torch.style.opacity = '1';
+              setTimeout(() => torch.style.opacity = '0', 2500);
+            }
+          });
+        });
+
+        peer.on('call', (call) => {
+          call.answer();
+          call.on('stream', (phoneAudio) => {
+            const player = document.getElementById('remoteAudioPlayer');
+            player.srcObject = phoneAudio;
+            player.play().catch(e => console.log(e));
+          });
+        });
+
+        initMotionDetection();
+        if (localStream.getAudioTracks().length > 0) initSoundDetection();
+
+      } catch (err) {
+        alert("Kamera-Fehler: " + err.message);
+      }
+    }
+
+    function initMotionDetection() {
+      const video = document.getElementById('localVideo');
+      const canvas = document.getElementById('motionCanvas');
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      let prevFrame = null;
+      let motionCooldown = false;
+
+      setInterval(() => {
+        if (video.readyState < 2) return;
+        canvas.width = 80;
+        canvas.height = 45;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const currentFrame = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+        if (prevFrame) {
+          let diffScore = 0;
+          const len = currentFrame.data.length;
+          for (let i = 0; i < len; i += 16) {
+            if (Math.abs(currentFrame.data[i] - prevFrame.data[i]) +
+                Math.abs(currentFrame.data[i+1] - prevFrame.data[i+1]) +
+                Math.abs(currentFrame.data[i+2] - prevFrame.data[i+2]) > 90) diffScore++;
+          }
+
+          if (diffScore > 25 && !motionCooldown && isAlarmArmed) {
+            triggerAlarm("Bewegung erkannt!");
+            motionCooldown = true;
+            setTimeout(() => { motionCooldown = false; }, 30000);
+          }
+        }
+        prevFrame = currentFrame;
+      }, 250);
+    }
+
+    function initSoundDetection() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 256;
+        const source = audioCtx.createMediaStreamSource(localStream);
+        source.connect(analyser);
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        let soundCooldown = false;
+
+        setInterval(() => {
+          analyser.getByteFrequencyData(dataArray);
+          let sum = 0;
+          for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+          const avgVolume = sum / dataArray.length;
+
+          if (avgVolume > 50 && !soundCooldown && isAlarmArmed) {
+            triggerAlarm("Geräusch erkannt!");
+            soundCooldown = true;
+            setTimeout(() => { soundCooldown = false; }, 30000);
+          }
+        }, 350);
+      } catch(e) {}
+    }
+
+    function triggerAlarm(msg) {
+      if (msg.includes("Bewegung")) {
+        const b = document.getElementById('motionBadge');
+        b.classList.remove('hidden');
+        setTimeout(() => b.classList.add('hidden'), 4000);
+      } else {
+        const b = document.getElementById('noiseBadge');
+        b.classList.remove('hidden');
+        setTimeout(() => b.classList.add('hidden'), 4000);
+      }
+
+      if (dataConnection && dataConnection.open) {
+        dataConnection.send({ type: 'ALERT', message: msg, time: getFormattedTimestamp() });
+      }
+
+      const topic = document.getElementById('pushTopicInput').value.trim();
+      const email = document.getElementById('pushEmailInput').value.trim();
+
+      if (topic) {
+        const headers = { 'Title': '🚨 SafeCam Alarm!', 'Priority': 'urgent', 'Tags': 'warning,camera' };
+        if (email) headers['Email'] = email;
+        fetch(`https://ntfy.sh/${topic}`, {
+          method: 'POST',
+          body: `${msg} am ${getFormattedTimestamp()}`,
+          headers: headers
+        }).catch(err => console.log("Push failed:", err));
+      }
+
+      recordLocalPcClip(10, msg);
+    }
+
+    function recordLocalPcClip(seconds, eventName) {
+      if (mediaRecorder && mediaRecorder.state === "recording") return;
+      recordedChunks = [];
+      try { mediaRecorder = new MediaRecorder(localStream); } catch(e) { return; }
+      mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+        saveClipToPcGallery(blob, eventName + " (" + getFormattedTimestamp().split(' ')[1] + ")");
+      };
+      mediaRecorder.start();
+      setTimeout(() => { if (mediaRecorder.state === "recording") mediaRecorder.stop(); }, seconds * 1000);
+    }
+
+    function saveClipToPcGallery(blob, title) {
+      document.getElementById('noPcClipsMsg')?.remove();
+      const url = URL.createObjectURL(blob);
+      const gallery = document.getElementById('pcClipsGallery');
+      const item = document.createElement('div');
+      item.className = "bg-slate-950 p-2 rounded-lg border border-slate-800 flex justify-between items-center";
+      item.innerHTML = `
+        <span class="truncate font-mono">${title}</span>
+        <div class="flex gap-1.5 shrink-0">
+          <a href="${url}" target="_blank" class="bg-slate-800 px-2 py-0.5 rounded text-slate-300">Ansehen</a>
+          <a href="${url}" download="${title.replace(/[: ]/g, '_')}.webm" class="bg-emerald-600 px-2 py-0.5 rounded text-white">Speichern</a>
+        </div>
+      `;
+      gallery.prepend(item);
+    }
+
+    function playLocalSiren() {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sawtooth';
+      gain.gain.setValueAtTime(1, ctx.currentTime);
+      for (let i = 0; i < 5; i++) {
+        osc.frequency.setValueAtTime(600, ctx.currentTime + i * 0.6);
+        osc.frequency.linearRampToValueAtTime(1300, ctx.currentTime + i * 0.6 + 0.3);
+      }
+      osc.start();
+      osc.stop(ctx.currentTime + 3.0);
+    }
+
+    // ==========================================
+    // 2. MONITOR-VIEWER (HANDY)
+    // ==========================================
+    function startViewerMode() {
+      document.getElementById('modeSelection').style.display = 'none';
+      const vView = document.getElementById('viewerView');
+      vView.style.display = 'flex';
+
+      peer = new Peer();
+      peer.on('open', () => {
+        peer.on('call', (call) => {
+          call.answer();
+          call.on('stream', (incomingStream) => {
+            const v = document.getElementById('remoteVideo');
+            v.srcObject = incomingStream;
+            v.play().catch(() => {
+              document.getElementById('unmuteOverlayBtn').style.display = 'flex';
+            });
+          });
+        });
+
+        const savedCam = localStorage.getItem('safecam_saved_cam');
+        if (window.location.hash.includes('connect=')) {
+          const target = window.location.hash.split('connect=')[1];
+          localStorage.setItem('safecam_saved_cam', target);
+          initiateConnection(target);
+        } else if (savedCam) {
+          document.getElementById('statusText').innerText = "Auto-Verbinde...";
+          initiateConnection(savedCam);
+        } else {
+          const html5QrCode = new Html5Qrcode("reader");
+          html5QrCode.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: { width: 220, height: 220 } },
+            (decodedText) => {
+              html5QrCode.stop();
+              const target = decodedText.includes('#connect=') ? decodedText.split('#connect=')[1] : decodedText;
+              localStorage.setItem('safecam_saved_cam', target);
+              initiateConnection(target);
+            }
+          ).catch(() => {});
+        }
+      });
+
+      setupPushToTalk();
+    }
+
+    function initiateConnection(cameraPeerId) {
+      if (!cameraPeerId) return;
+      document.getElementById('viewerConnectCard').style.display = 'none';
+      document.getElementById('statusText').innerText = "Verbinde P2P...";
+
+      dataConnection = peer.connect(cameraPeerId);
+      dataConnection.on('open', () => {
+        document.getElementById('statusText').innerText = "Live (60 FPS)";
+        document.getElementById('connectionStatus').classList.replace('text-amber-400', 'text-emerald-400');
+        dataConnection.send({ type: 'REQUEST_STREAM', viewerId: peer.id });
+      });
+
+      dataConnection.on('data', (data) => {
+        if (data.type === 'ALERT') {
+          if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+          const banner = document.getElementById('alertBanner');
+          document.getElementById('alertBannerText').innerText = `${data.message} (${data.time.split(' ')[1]})`;
+          banner.classList.remove('hidden');
+
+          document.getElementById('noEventsMsg')?.remove();
+          const log = document.getElementById('mobileEventLog');
+          const entry = document.createElement('div');
+          entry.className = "p-2 rounded bg-slate-950 border border-slate-800 flex justify-between";
+          entry.innerHTML = `<span class="text-rose-400">${data.message}</span> <span class="text-slate-500 font-mono">${data.time}</span>`;
+          log.prepend(entry);
+        }
+      });
+
+      dataConnection.on('close', () => {
+        document.getElementById('statusText').innerText = "Reconnect...";
+        document.getElementById('connectionStatus').classList.replace('text-emerald-400', 'text-amber-400');
+        setTimeout(() => initiateConnection(cameraPeerId), 4000);
+      });
+    }
+
+    function forgetSavedCam() {
+      if (confirm("Kamera entkoppeln? Du musst danach wieder den QR-Code scannen.")) {
+        localStorage.removeItem('safecam_saved_cam');
+        window.location.hash = "";
+        window.location.reload();
+      }
+    }
+
+    function unlockVideoPlayback() {
+      const v = document.getElementById('remoteVideo');
+      v.play();
+      document.getElementById('unmuteOverlayBtn').style.display = 'none';
+    }
+
+    function toggleAlarmArming() {
+      isAlarmArmed = !isAlarmArmed;
+      const btn = document.getElementById('alarmToggleBtn');
+      const text = document.getElementById('alarmToggleText');
+      const icon = document.getElementById('alarmToggleIcon');
+
+      if (isAlarmArmed) {
+        btn.className = "col-span-2 bg-emerald-950/80 border border-emerald-700 p-3 rounded-xl flex flex-col items-center justify-center gap-1";
+        text.innerText = "Alarme: AN";
+        text.className = "text-xs font-bold text-emerald-300";
+        icon.className = "w-6 h-6 text-emerald-400";
+      } else {
+        btn.className = "col-span-2 bg-slate-800 border border-slate-700 p-3 rounded-xl flex flex-col items-center justify-center gap-1";
+        text.innerText = "Alarme: AUS";
+        text.className = "text-xs font-bold text-slate-400";
+        icon.className = "w-6 h-6 text-slate-500";
+      }
+
+      if (dataConnection && dataConnection.open) {
+        dataConnection.send({ type: 'ARM_STATUS', armed: isAlarmArmed });
+      }
+    }
+
+    function toggleCleanNightVision() {
+      isBrightened = !isBrightened;
+      const v = document.getElementById('remoteVideo');
+      if (isBrightened) v.classList.add('clean-night-vision');
+      else v.classList.remove('clean-night-vision');
+    }
+
+    function setupPushToTalk() {
+      const ptt = document.getElementById('pttBtn');
+      let phoneMic = null;
+      let micCall = null;
+
+      const startTalking = async () => {
+        try {
+          if (!phoneMic) phoneMic = await navigator.mediaDevices.getUserMedia({ audio: true });
+          ptt.classList.replace('bg-slate-800', 'bg-emerald-600');
+          if (dataConnection) micCall = peer.call(dataConnection.peer, phoneMic);
+        } catch(e) {}
+      };
+
+      const stopTalking = () => {
+        ptt.classList.replace('bg-emerald-600', 'bg-slate-800');
+        if (micCall) { micCall.close(); micCall = null; }
+        if (phoneMic) { phoneMic.getTracks().forEach(t => t.stop()); phoneMic = null; }
+      };
+
+      ptt.addEventListener('mousedown', startTalking);
+      ptt.addEventListener('mouseup', stopTalking);
+      ptt.addEventListener('touchstart', (e) => { e.preventDefault(); startTalking(); });
+      ptt.addEventListener('touchend', (e) => { e.preventDefault(); stopTalking(); });
+    }
+
+    function triggerRemoteSiren() {
+      if (dataConnection && dataConnection.open) {
+        dataConnection.send({ type: 'SIREN' });
+        alert("Sirene ausgelöst!");
+      }
+    }
+
+    function triggerRemoteTorch() {
+      if (dataConnection && dataConnection.open) dataConnection.send({ type: 'TORCH' });
+    }
+  </script>
+</body>
+</html>
