@@ -12,21 +12,10 @@
   <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
   <style>
-    .overlay-hidden {
-      display: none !important;
-      pointer-events: none !important;
-    }
-    .overlay-visible {
-      display: flex !important;
-      pointer-events: auto !important;
-    }
-    .clean-night-vision {
-      filter: brightness(2.2) contrast(1.3) !important;
-    }
-    button {
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-    }
+    .overlay-hidden { display: none !important; pointer-events: none !important; }
+    .overlay-visible { display: flex !important; pointer-events: auto !important; }
+    .clean-night-vision { filter: brightness(2.2) contrast(1.3) !important; }
+    button { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans overflow-x-hidden">
@@ -51,10 +40,10 @@
       </div>
 
       <div class="flex justify-between items-center pt-2">
-        <span class="text-xs text-slate-400">30 Sekunden Clip</span>
+        <span class="text-xs text-slate-400">30 Sekunden Aufnahme</span>
         <div class="flex gap-2">
           <a id="modalDownloadBtn" download class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer">
-            <i data-lucide="download" class="w-4 h-4"></i> Download
+            <i data-lucide="download" class="w-4 h-4"></i> Herunterladen
           </a>
           <button type="button" onclick="closeVideoModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-xl text-xs cursor-pointer">Schließen</button>
         </div>
@@ -66,12 +55,12 @@
   <!-- GESPEICHERTE VIDEOS DRAWER (HANDY)         -->
   <!-- ========================================== -->
   <div id="clipsDrawer" class="overlay-hidden fixed inset-0 z-40 bg-black/80 backdrop-blur-sm flex-col justify-end sm:justify-center items-center p-0 sm:p-4">
-    <div class="bg-slate-900 border-t sm:border border-slate-700 rounded-t-3xl sm:rounded-2xl max-w-lg w-full max-h-[80vh] flex flex-col shadow-2xl overflow-hidden">
+    <div class="bg-slate-900 border-t sm:border border-slate-700 rounded-t-3xl sm:rounded-2xl max-w-lg w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
       <div class="flex justify-between items-center p-4 border-b border-slate-800">
         <div class="flex items-center gap-2">
           <i data-lucide="film" class="w-5 h-5 text-emerald-400"></i>
           <h3 class="font-bold text-white text-sm">Gespeicherte 30s Videos</h3>
-          <span id="drawerClipBadge" class="text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800 px-2 py-0.5 rounded-full font-mono">0 Clips</span>
+          <span id="drawerClipBadge" class="text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800 px-2 py-0.5 rounded-full font-mono">0</span>
         </div>
         <button type="button" onclick="closeClipsDrawer()" class="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer">
           <i data-lucide="x" class="w-6 h-6"></i>
@@ -79,9 +68,9 @@
       </div>
 
       <div id="drawerClipsList" class="flex-1 overflow-y-auto p-4 space-y-2 text-xs">
-        <div id="noDrawerClipsMsg" class="text-slate-500 py-10 text-center flex flex-col items-center gap-2">
+        <div id="noDrawerClipsMsg" class="text-slate-500 py-12 text-center flex flex-col items-center gap-2">
           <i data-lucide="video-off" class="w-8 h-8 text-slate-600"></i>
-          <span>Noch keine Bewegungs-Videos vorhanden.</span>
+          <span>Noch keine Videos gespeichert.<br>Löse einen Test-Alarm aus!</span>
         </div>
       </div>
     </div>
@@ -119,7 +108,7 @@
       </div>
       <div>
         <div class="font-bold text-lg text-white">Kamera-Station (PC)</div>
-        <div class="text-xs text-emerald-200">Nimmt 30s Clips auf & E-Mail an dich</div>
+        <div class="text-xs text-emerald-200">30s Clips aufnehmen & E-Mail an dich</div>
       </div>
     </button>
 
@@ -150,12 +139,15 @@
           <span id="camOsdTime" class="text-slate-200">0000-00-00 00:00:00</span>
         </div>
 
+        <!-- 30s Aufnahme-Indikator -->
+        <div id="recordingTimerBadge" class="hidden absolute top-3 inset-x-0 mx-auto w-max bg-red-600 text-white font-mono text-xs px-3 py-1 rounded-full font-bold animate-pulse shadow-lg flex items-center gap-2">
+          <span class="w-2 h-2 bg-white rounded-full"></span>
+          <span>NIMMT 30s CLIP AUF... (<span id="recCountdown">30</span>s)</span>
+        </div>
+
         <div class="absolute top-3 right-3 flex gap-2">
           <div id="motionBadge" class="hidden bg-amber-500 text-black px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider animate-pulse flex items-center gap-1">
             <i data-lucide="activity" class="w-3.5 h-3.5"></i> Bewegung
-          </div>
-          <div id="noiseBadge" class="hidden bg-rose-500 text-white px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider animate-pulse flex items-center gap-1">
-            <i data-lucide="volume-2" class="w-3.5 h-3.5"></i> Geräusch
           </div>
         </div>
         <div id="screenTorchOverlay" class="absolute inset-0 bg-white opacity-0 pointer-events-none transition-opacity duration-300 z-40"></div>
@@ -179,23 +171,29 @@
           </div>
         </div>
 
+        <!-- Alarm Test-Knopf & E-Mail Status -->
         <div class="border-t border-slate-800 pt-3 space-y-2">
-          <h4 class="text-xs font-bold uppercase text-slate-400 flex items-center gap-1.5">
-            <i data-lucide="mail" class="w-4 h-4 text-emerald-400"></i> Alarm-Empfänger (E-Mail)
-          </h4>
-          <input type="email" id="pushEmailInput" value="mexgogo16@gmail.com" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs font-mono text-emerald-400 font-semibold focus:outline-none focus:border-emerald-500">
-          <input type="hidden" id="pushTopicInput">
-          <div class="text-[11px] text-slate-400 flex items-center gap-1">
-            <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-400"></i> E-Mail bei jeder Bewegung aktiv
+          <div class="flex justify-between items-center">
+            <h4 class="text-xs font-bold uppercase text-slate-400 flex items-center gap-1.5">
+              <i data-lucide="mail" class="w-4 h-4 text-emerald-400"></i> Alarm-E-Mail
+            </h4>
+            <span id="mailStatusBadge" class="text-[10px] text-emerald-400 bg-emerald-950 border border-emerald-800 px-2 py-0.5 rounded">Bereit</span>
           </div>
+          <div class="bg-slate-950 p-2 rounded-lg border border-slate-800 text-xs font-mono text-emerald-400 font-semibold truncate">
+            mexgogo16@gmail.com
+          </div>
+          <button type="button" onclick="triggerAlarm('Manueller Test-Alarm')" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold p-2.5 rounded-xl text-xs flex items-center justify-center gap-2 transition cursor-pointer">
+            <i data-lucide="alert-triangle" class="w-4 h-4"></i> 🚨 Test-Alarm & Clip auslösen
+          </button>
         </div>
 
+        <!-- PC-Clips Liste -->
         <div class="border-t border-slate-800 pt-3 flex-1 flex flex-col">
           <h4 class="text-xs font-bold uppercase text-slate-400 mb-2 flex items-center justify-between">
             <span class="flex items-center gap-1.5"><i data-lucide="video" class="w-4 h-4 text-emerald-400"></i> Aufgenommene 30s Clips</span>
-            <span id="clipCountBadge" class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full">0</span>
+            <span id="clipCountBadge" class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-mono">0</span>
           </h4>
-          <div id="pcClipsGallery" class="overflow-y-auto max-h-64 space-y-2 pr-1 text-xs">
+          <div id="pcClipsGallery" class="overflow-y-auto max-h-56 space-y-2 pr-1 text-xs">
             <div id="noPcClipsMsg" class="text-slate-500 py-4 text-center">Noch keine Clips vorhanden.</div>
           </div>
         </div>
@@ -219,11 +217,10 @@
       </div>
     </div>
 
-    <!-- Live Monitor Feed (Garantiert sichtbares Bild dank muted Start) -->
+    <!-- Live Monitor Feed -->
     <div id="liveStreamWrapper" class="relative bg-black rounded-2xl overflow-hidden border border-slate-800 shadow-2xl aspect-video w-full flex items-center justify-center">
       <video id="remoteVideo" autoplay playsinline muted class="w-full h-full object-contain bg-black"></video>
 
-      <!-- Ton-Umschalter Knopf direkt auf dem Videobild -->
       <button id="audioToggleBtn" type="button" onclick="toggleAudio()" class="absolute top-3 right-3 z-30 bg-black/60 hover:bg-black/80 backdrop-blur px-3 py-1.5 rounded-xl border border-slate-700 font-mono text-xs text-white flex items-center gap-1.5 cursor-pointer">
         <i data-lucide="volume-x" class="w-4 h-4 text-amber-400" id="audioToggleIcon"></i>
         <span id="audioToggleText">Ton: AUS</span>
@@ -237,52 +234,57 @@
       <div id="alertBanner" class="hidden absolute bottom-4 inset-x-4 bg-rose-600/95 backdrop-blur text-white p-3 rounded-xl border border-rose-400 font-bold text-sm flex items-center justify-between shadow-2xl animate-pulse">
         <div class="flex items-center gap-2">
           <i data-lucide="bell" class="w-5 h-5"></i>
-          <span id="alertBannerText">Bewegung erkannt! 30s Clip gespeichert</span>
+          <span id="alertBannerText">Bewegung! 30s Clip wird übertragen...</span>
         </div>
         <button type="button" onclick="document.getElementById('alertBanner').classList.add('hidden')" class="bg-white/20 px-2.5 py-1 rounded text-xs cursor-pointer">OK</button>
       </div>
     </div>
 
-    <!-- Steuerung mit Knopf für GESPEICHERTE VIDEOS -->
+    <!-- Handy Steuerungskonsole -->
     <div class="grid grid-cols-4 gap-2 bg-slate-900 border border-slate-800 p-3 rounded-2xl">
       
-      <!-- KNOPF FÜR GESPEICHERTE VIDEOS (NEU!) -->
-      <button id="btnOpenDrawer" type="button" onclick="openClipsDrawer()" class="col-span-2 bg-gradient-to-r from-emerald-600 to-teal-700 active:scale-95 border border-emerald-500/40 p-3 rounded-xl flex items-center justify-center gap-2 cursor-pointer shadow-lg">
+      <!-- HAUPTKNOPF: GESPEICHERTE VIDEOS ANSEHEN -->
+      <button id="btnOpenDrawer" type="button" onclick="openClipsDrawer()" class="col-span-2 bg-gradient-to-r from-emerald-600 to-teal-700 active:scale-95 border border-emerald-500/40 p-3.5 rounded-xl flex items-center justify-center gap-2 cursor-pointer shadow-lg">
         <i data-lucide="film" class="w-5 h-5 text-white"></i>
         <span class="text-xs font-bold text-white">Videos (30s)</span>
-        <span id="mobileClipCounter" class="bg-black/40 text-emerald-300 text-[10px] font-mono px-2 py-0.5 rounded-full">0</span>
+        <span id="mobileClipCounter" class="bg-black/40 text-emerald-300 text-[10px] font-mono px-2 py-0.5 rounded-full font-bold">0</span>
       </button>
 
       <!-- Alarm Scharf / Unscharf -->
-      <button id="alarmToggleBtn" type="button" onclick="toggleAlarmArming()" class="col-span-2 bg-emerald-950/80 border border-emerald-700 p-3 rounded-xl flex items-center justify-center gap-2 cursor-pointer">
+      <button id="alarmToggleBtn" type="button" onclick="toggleAlarmArming()" class="col-span-2 bg-emerald-950/80 border border-emerald-700 p-3.5 rounded-xl flex items-center justify-center gap-2 cursor-pointer">
         <i data-lucide="bell" class="w-5 h-5 text-emerald-400" id="alarmToggleIcon"></i>
         <span class="text-xs font-bold text-emerald-300" id="alarmToggleText">Alarme: AN</span>
       </button>
 
-      <!-- Push-to-Talk -->
-      <button id="pttBtn" type="button" class="col-span-2 bg-slate-800 active:bg-emerald-600 border border-slate-700 p-3 rounded-xl flex items-center justify-center gap-2 select-none cursor-pointer">
-        <i data-lucide="mic" class="w-5 h-5 text-emerald-400"></i>
+      <!-- Test-Alarm vom Handy auslösen -->
+      <button type="button" onclick="triggerRemoteTestAlarm()" class="col-span-2 bg-rose-950/80 hover:bg-rose-900/80 border border-rose-800 p-2.5 rounded-xl flex items-center justify-center gap-2 cursor-pointer text-rose-300 font-bold text-xs">
+        <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-400"></i> Test-Alarm auslösen
+      </button>
+
+      <!-- Push-to-Talk (Gegensprechanlage) -->
+      <button id="pttBtn" type="button" class="col-span-2 bg-slate-800 active:bg-emerald-600 border border-slate-700 p-2.5 rounded-xl flex items-center justify-center gap-2 select-none cursor-pointer">
+        <i data-lucide="mic" class="w-4 h-4 text-emerald-400"></i>
         <span class="text-xs font-bold text-slate-200">Sprechen (Halten)</span>
       </button>
 
-      <button type="button" onclick="toggleCleanNightVision()" class="bg-slate-800 active:scale-95 border border-slate-700 p-3 rounded-xl flex flex-col items-center justify-center gap-1 cursor-pointer">
-        <i data-lucide="sun" class="w-5 h-5 text-amber-400"></i>
-        <span class="text-[11px] font-bold text-slate-200">Helligkeit</span>
+      <button type="button" onclick="toggleCleanNightVision()" class="bg-slate-800 active:scale-95 border border-slate-700 p-2.5 rounded-xl flex flex-col items-center justify-center gap-1 cursor-pointer">
+        <i data-lucide="sun" class="w-4 h-4 text-amber-400"></i>
+        <span class="text-[10px] font-bold text-slate-200">Helligkeit</span>
       </button>
 
-      <button type="button" onclick="triggerRemoteSiren()" class="bg-slate-800 active:scale-95 border border-slate-700 p-3 rounded-xl flex flex-col items-center justify-center gap-1 cursor-pointer">
-        <i data-lucide="megaphone" class="w-5 h-5 text-rose-500"></i>
-        <span class="text-[11px] font-bold text-slate-200">Sirene</span>
+      <button type="button" onclick="triggerRemoteSiren()" class="bg-slate-800 active:scale-95 border border-slate-700 p-2.5 rounded-xl flex flex-col items-center justify-center gap-1 cursor-pointer">
+        <i data-lucide="megaphone" class="w-4 h-4 text-rose-500"></i>
+        <span class="text-[10px] font-bold text-slate-200">Sirene</span>
       </button>
 
-      <button type="button" onclick="triggerRemoteTorch()" class="col-span-2 bg-slate-800 active:scale-95 border border-slate-700 p-3 rounded-xl flex items-center justify-center gap-2 cursor-pointer">
-        <i data-lucide="flashlight" class="w-5 h-5 text-yellow-400"></i>
-        <span class="text-xs font-bold text-slate-200">Licht-Blitz</span>
+      <button type="button" onclick="triggerRemoteTorch()" class="bg-slate-800 active:scale-95 border border-slate-700 p-2.5 rounded-xl flex flex-col items-center justify-center gap-1 cursor-pointer">
+        <i data-lucide="flashlight" class="w-4 h-4 text-yellow-400"></i>
+        <span class="text-[10px] font-bold text-slate-200">Licht</span>
       </button>
 
-      <button type="button" onclick="forgetSavedCam()" class="col-span-2 bg-slate-800 active:scale-95 border border-slate-700 p-3 rounded-xl flex items-center justify-center gap-2 cursor-pointer" title="Entkoppeln">
+      <button type="button" onclick="forgetSavedCam()" class="bg-slate-800 active:scale-95 border border-slate-700 p-2.5 rounded-xl flex flex-col items-center justify-center gap-1 cursor-pointer" title="Entkoppeln">
         <i data-lucide="trash-2" class="w-4 h-4 text-red-400"></i>
-        <span class="text-xs font-bold text-slate-200">Kamera trennen</span>
+        <span class="text-[10px] font-bold text-slate-200">Trennen</span>
       </button>
     </div>
 
@@ -292,7 +294,7 @@
         <h4 class="font-bold text-sm text-slate-200 flex items-center gap-2">
           <i data-lucide="history" class="w-4 h-4 text-emerald-400"></i> Letzte Alarme
         </h4>
-        <span class="text-[11px] text-emerald-400">mexgogo16@gmail.com</span>
+        <span class="text-[11px] text-emerald-400 font-mono">mexgogo16@gmail.com</span>
       </div>
       <div id="mobileEventLog" class="flex-1 overflow-y-auto max-h-36 space-y-2 pr-1 text-xs">
         <div id="noEventsMsg" class="text-center py-3 text-slate-500">Keine neuen Alarme.</div>
@@ -303,7 +305,7 @@
   <audio id="remoteAudioPlayer" autoplay></audio>
 
   <script>
-    // Globale Funktionen bereitstellen
+    // Globale Funktionen registrieren
     window.startCameraMode = startCameraMode;
     window.startViewerMode = startViewerMode;
     window.playClipInModal = playClipInModal;
@@ -316,6 +318,8 @@
     window.toggleCleanNightVision = toggleCleanNightVision;
     window.triggerRemoteSiren = triggerRemoteSiren;
     window.triggerRemoteTorch = triggerRemoteTorch;
+    window.triggerRemoteTestAlarm = triggerRemoteTestAlarm;
+    window.triggerAlarm = triggerAlarm;
     window.forgetSavedCam = forgetSavedCam;
 
     let peer = null;
@@ -327,16 +331,17 @@
     let isAlarmArmed = true;
     let isRecordingNow = false;
     let clipCounter = 0;
-    let mobileRecorder = null;
-    let mobileRecordedChunks = [];
+    let mobileClipsCount = 0;
 
-    // Feste weltweite STUN Server für perfekte Verbindungen
+    // Eingehende Videoübertragung auf dem Handy
+    let incomingClipMeta = null;
+    let incomingClipChunks = [];
+
     const peerOptions = {
       config: {
         iceServers: [
           { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' },
-          { urls: 'stun:stun2.l.google.com:19302' }
+          { urls: 'stun:stun1.l.google.com:19302' }
         ]
       }
     };
@@ -388,7 +393,7 @@
     });
 
     // ==========================================
-    // VIDEO-PLAYER & DRAWER
+    // VIDEO-PLAYER FUNKTIONEN
     // ==========================================
     function playClipInModal(url, title) {
       const modal = document.getElementById('videoModal');
@@ -427,7 +432,6 @@
       drawer.classList.add('overlay-hidden');
     }
 
-    // Ton auf dem Handy ein-/ausschalten
     function toggleAudio() {
       const v = document.getElementById('remoteVideo');
       const text = document.getElementById('audioToggleText');
@@ -453,10 +457,6 @@
     async function startCameraMode() {
       document.getElementById('modeSelection').style.display = 'none';
       document.getElementById('cameraView').style.display = 'flex';
-
-      const savedTopic = safeStorageGet('safecam_push_topic', 'safecam-mex-' + Math.random().toString(36).substring(2, 6));
-      document.getElementById('pushTopicInput').value = savedTopic;
-      safeStorageSet('safecam_push_topic', savedTopic);
 
       try {
         const videoConstraints = {
@@ -498,21 +498,13 @@
 
         peer.on('connection', (conn) => {
           dataConnection = conn;
-          document.getElementById('statusText').innerText = "Aktiv";
+          document.getElementById('statusText').innerText = "Verbunden";
           document.getElementById('connectionStatus').classList.replace('text-amber-400', 'text-emerald-400');
 
-          setTimeout(() => {
-            const overlay = document.getElementById('pcBlackoutOverlay');
-            overlay.classList.remove('overlay-hidden');
-            overlay.classList.add('overlay-visible');
-          }, 1500);
-
           conn.on('data', (data) => {
-            if (data.type === 'REQUEST_STREAM') {
-              console.log("Sende Video an Viewer:", data.viewerId);
-              peer.call(data.viewerId, localStream);
-            }
+            if (data.type === 'REQUEST_STREAM') peer.call(data.viewerId, localStream);
             if (data.type === 'ARM_STATUS') isAlarmArmed = data.armed;
+            if (data.type === 'TEST_ALARM') triggerAlarm('Manueller Handy-Test');
             if (data.type === 'SIREN') playLocalSiren();
             if (data.type === 'TORCH') {
               const torch = document.getElementById('screenTorchOverlay');
@@ -532,13 +524,13 @@
         });
 
         initMotionDetection();
-        if (localStream.getAudioTracks().length > 0) initSoundDetection();
 
       } catch (err) {
         alert("Kamera-Fehler: " + err.message);
       }
     }
 
+    // Präzise Bewegungserkennung
     function initMotionDetection() {
       const video = document.getElementById('localVideo');
       const canvas = document.getElementById('motionCanvas');
@@ -548,8 +540,8 @@
 
       setInterval(() => {
         if (video.readyState < 2) return;
-        canvas.width = 80;
-        canvas.height = 45;
+        canvas.width = 64;
+        canvas.height = 36;
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         const currentFrame = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
@@ -557,44 +549,20 @@
           let diffScore = 0;
           const len = currentFrame.data.length;
           for (let i = 0; i < len; i += 16) {
-            if (Math.abs(currentFrame.data[i] - prevFrame.data[i]) +
-                Math.abs(currentFrame.data[i+1] - prevFrame.data[i+1]) +
-                Math.abs(currentFrame.data[i+2] - prevFrame.data[i+2]) > 90) diffScore++;
+            const diff = Math.abs(currentFrame.data[i] - prevFrame.data[i]) +
+                         Math.abs(currentFrame.data[i+1] - prevFrame.data[i+1]) +
+                         Math.abs(currentFrame.data[i+2] - prevFrame.data[i+2]);
+            if (diff > 50) diffScore++;
           }
 
-          if (diffScore > 25 && !motionCooldown && isAlarmArmed) {
+          if (diffScore > 15 && !motionCooldown && isAlarmArmed) {
             triggerAlarm("Bewegung erkannt!");
             motionCooldown = true;
             setTimeout(() => { motionCooldown = false; }, 35000);
           }
         }
         prevFrame = currentFrame;
-      }, 250);
-    }
-
-    function initSoundDetection() {
-      try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const analyser = audioCtx.createAnalyser();
-        analyser.fftSize = 256;
-        const source = audioCtx.createMediaStreamSource(localStream);
-        source.connect(analyser);
-        const dataArray = new Uint8Array(analyser.frequencyBinCount);
-        let soundCooldown = false;
-
-        setInterval(() => {
-          analyser.getByteFrequencyData(dataArray);
-          let sum = 0;
-          for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
-          const avgVolume = sum / dataArray.length;
-
-          if (avgVolume > 50 && !soundCooldown && isAlarmArmed) {
-            triggerAlarm("Geräusch erkannt!");
-            soundCooldown = true;
-            setTimeout(() => { soundCooldown = false; }, 35000);
-          }
-        }, 350);
-      } catch(e) {}
+      }, 200);
     }
 
     function captureThumbnail(videoElement) {
@@ -610,72 +578,141 @@
       }
     }
 
+    // ==========================================
+    // ALARM: E-MAIL SENDEN & 30s CLIP STARTEN
+    // ==========================================
     function triggerAlarm(msg) {
       const timestamp = getFormattedTimestamp();
       const thumbData = captureThumbnail(document.getElementById('localVideo'));
 
-      if (msg.includes("Bewegung")) {
-        const b = document.getElementById('motionBadge');
-        b.classList.remove('hidden');
-        setTimeout(() => b.classList.add('hidden'), 5000);
-      } else {
-        const b = document.getElementById('noiseBadge');
-        b.classList.remove('hidden');
-        setTimeout(() => b.classList.add('hidden'), 5000);
-      }
+      const b = document.getElementById('motionBadge');
+      b.classList.remove('hidden');
+      setTimeout(() => b.classList.add('hidden'), 5000);
 
+      // 1. E-Mail sofort per FormSubmit API absenden
+      sendEmailAlert(msg, timestamp);
+
+      // 2. Alarm an Handy signalisieren
       if (dataConnection && dataConnection.open) {
         dataConnection.send({ type: 'ALERT', message: msg, time: timestamp, thumb: thumbData });
       }
 
-      // E-Mail an mexgogo16@gmail.com senden
-      const topic = document.getElementById('pushTopicInput').value.trim();
-      const email = document.getElementById('pushEmailInput').value.trim();
-
-      if (topic) {
-        const headers = { 
-          'Title': '🚨 SafeCam Alarm: ' + msg, 
-          'Priority': 'urgent', 
-          'Tags': 'warning,camera' 
-        };
-        if (email) headers['Email'] = email;
-
-        fetch(`https://ntfy.sh/${topic}`, {
-          method: 'POST',
-          body: `Sicherheitsalarm!\n\nEreignis: ${msg}\nUhrzeit: ${timestamp}\nEin 30-Sekunden-Videoclip wurde gespeichert.`,
-          headers: headers
-        }).catch(err => console.log("E-Mail/Push Fehler:", err));
-      }
-
+      // 3. 30-Sekunden-Video am PC aufzeichnen
       recordLocalPcClip(30, msg, timestamp, thumbData);
     }
 
+    // FormSubmit API: Direkter Mailversand an mexgogo16@gmail.com
+    function sendEmailAlert(eventName, timestamp) {
+      const statusBadge = document.getElementById('mailStatusBadge');
+      if (statusBadge) statusBadge.innerText = "Sende E-Mail...";
+
+      fetch("https://formsubmit.co/ajax/mexgogo16@gmail.com", {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          _subject: `🚨 SafeCam Sicherheitsalarm: ${eventName}!`,
+          Ereignis: eventName,
+          Uhrzeit: timestamp,
+          Status: "Ein 30-Sekunden-Videoclip wurde aufgezeichnet.",
+          Hinweis: "SafeCam Pro Überwachungssystem"
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (statusBadge) {
+          statusBadge.innerText = "Gesendet ✓";
+          setTimeout(() => { statusBadge.innerText = "Bereit"; }, 6000);
+        }
+      })
+      .catch(err => {
+        if (statusBadge) statusBadge.innerText = "Fehler";
+      });
+    }
+
+    // 30-Sekunden-Videoaufnahme mit Live-Countdown
     function recordLocalPcClip(seconds, eventName, timestamp, thumbData) {
       if (isRecordingNow) return;
       isRecordingNow = true;
       recordedChunks = [];
 
-      try {
-        mediaRecorder = new MediaRecorder(localStream);
-      } catch(e) { 
-        isRecordingNow = false;
-        return; 
+      // Passendes Video-Format wählen
+      let options = { mimeType: 'video/webm' };
+      if (!MediaRecorder.isTypeSupported('video/webm')) {
+        options = { mimeType: 'video/mp4' };
       }
 
-      mediaRecorder.ondataavailable = e => { 
-        if (e.data.size > 0) recordedChunks.push(e.data); 
+      try {
+        mediaRecorder = new MediaRecorder(localStream, options);
+      } catch(e) {
+        mediaRecorder = new MediaRecorder(localStream);
+      }
+
+      const timerBadge = document.getElementById('recordingTimerBadge');
+      const countdownEl = document.getElementById('recCountdown');
+      let remaining = seconds;
+      timerBadge.classList.remove('hidden');
+      countdownEl.innerText = remaining;
+
+      const countdownInterval = setInterval(() => {
+        remaining--;
+        countdownEl.innerText = remaining;
+        if (remaining <= 0) clearInterval(countdownInterval);
+      }, 1000);
+
+      mediaRecorder.ondataavailable = e => {
+        if (e.data.size > 0) recordedChunks.push(e.data);
       };
 
       mediaRecorder.onstop = () => {
-        const blob = new Blob(recordedChunks, { type: 'video/webm' });
-        saveClipToPcGallery(blob, `${eventName} - ${timestamp}`, thumbData);
+        clearInterval(countdownInterval);
+        timerBadge.classList.add('hidden');
+
+        const mime = mediaRecorder.mimeType || 'video/webm';
+        const blob = new Blob(recordedChunks, { type: mime });
+        const clipTitle = `${eventName} - ${timestamp}`;
+
+        // 1. Auf PC in der Galerie anzeigen
+        saveClipToPcGallery(blob, clipTitle, thumbData);
+
+        // 2. Videodatei direkt über den Datenkanal an das Smartphone senden!
+        sendVideoToPhone(blob, clipTitle, thumbData);
+
         isRecordingNow = false;
       };
 
-      mediaRecorder.start();
-      setTimeout(() => { 
-        if (mediaRecorder.state === "recording") mediaRecorder.stop(); 
+      mediaRecorder.start(1000); // Jede Sekunde einen Chunk schreiben
+      setTimeout(() => {
+        if (mediaRecorder.state === "recording") mediaRecorder.stop();
       }, seconds * 1000);
+    }
+
+    // Sendet das fertige Video Paket für Paket an das Handy
+    function sendVideoToPhone(blob, title, thumb) {
+      if (!dataConnection || !dataConnection.open) return;
+
+      blob.arrayBuffer().then(buffer => {
+        // Start-Signal
+        dataConnection.send({
+          type: 'VIDEO_TRANSFER_START',
+          title: title,
+          thumb: thumb,
+          mimeType: blob.type,
+          byteLength: buffer.byteLength
+        });
+
+        // In 16-KB Stücken senden (sicher für jedes WLAN & Mobilfunknetz)
+        const chunkSize = 16384;
+        for (let offset = 0; offset < buffer.byteLength; offset += chunkSize) {
+          const slice = buffer.slice(offset, offset + chunkSize);
+          dataConnection.send(slice);
+        }
+
+        // Ende-Signal
+        dataConnection.send({ type: 'VIDEO_TRANSFER_END' });
+      });
     }
 
     function saveClipToPcGallery(blob, title, thumbData) {
@@ -744,14 +781,13 @@
 
       peer = new Peer(peerOptions);
       
-      // Empfange Video-Call vom PC
       peer.on('call', (call) => {
         call.answer();
         call.on('stream', (incomingStream) => {
           const v = document.getElementById('remoteVideo');
-          v.muted = true; // Essentiell für fehlerfreies Autoplay auf Handys!
+          v.muted = true;
           v.srcObject = incomingStream;
-          v.play().catch(e => console.log("Play log:", e));
+          v.play().catch(e => console.log(e));
         });
       });
 
@@ -791,18 +827,18 @@
       dataConnection.on('open', () => {
         document.getElementById('statusText').innerText = "Live";
         document.getElementById('connectionStatus').classList.replace('text-amber-400', 'text-emerald-400');
-        // Fordere PC-Kamera auf, Video an dieses Handy zu rufen:
         dataConnection.send({ type: 'REQUEST_STREAM', viewerId: peer.id });
       });
 
+      // Daten- und Videoempfang vom PC
       dataConnection.on('data', (data) => {
+        // Alarm-Meldung
         if (data.type === 'ALERT') {
           if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
           const banner = document.getElementById('alertBanner');
-          document.getElementById('alertBannerText').innerText = `${data.message} - 30s Clip gespeichert!`;
+          document.getElementById('alertBannerText').innerText = `${data.message} - 30s Clip wird übertragen!`;
           banner.classList.remove('hidden');
 
-          // Eintrag im Protokoll
           document.getElementById('noEventsMsg')?.remove();
           const log = document.getElementById('mobileEventLog');
           const entry = document.createElement('div');
@@ -812,12 +848,33 @@
               <div class="text-rose-400 font-bold">${data.message}</div>
               <div class="text-slate-500 font-mono text-[10px]">${data.time}</div>
             </div>
-            <span class="text-[10px] text-emerald-400 bg-emerald-950/60 border border-emerald-800 px-2 py-0.5 rounded">30s Clip</span>
+            <span class="text-[10px] text-emerald-400 bg-emerald-950/60 border border-emerald-800 px-2 py-0.5 rounded font-mono">30s Clip</span>
           `;
           log.prepend(entry);
+        }
 
-          // Handy zeichnet den Live-Stream ebenfalls für 30s auf
-          recordPhoneLiveClip(30, data.message, data.time, data.thumb);
+        // 1. Beginn des Video-Transfers
+        if (data.type === 'VIDEO_TRANSFER_START') {
+          incomingClipChunks = [];
+          incomingClipMeta = data;
+        }
+
+        // 2. Binäre Video-Datenblöcke sammeln
+        if (data instanceof ArrayBuffer) {
+          incomingClipChunks.push(data);
+        }
+
+        // 3. Video-Transfer abgeschlossen -> Video in der Handy-Galerie anlegen!
+        if (data.type === 'VIDEO_TRANSFER_END' && incomingClipMeta) {
+          const videoBlob = new Blob(incomingClipChunks, { type: incomingClipMeta.mimeType || 'video/webm' });
+          saveClipToMobileDrawer(videoBlob, incomingClipMeta.title, incomingClipMeta.thumb);
+          incomingClipChunks = [];
+          incomingClipMeta = null;
+
+          // Banner aktualisieren
+          const banner = document.getElementById('alertBanner');
+          document.getElementById('alertBannerText').innerText = `30s Video empfangen! Tippe auf "Videos (30s)"`;
+          banner.classList.remove('hidden');
         }
       });
 
@@ -828,34 +885,7 @@
       });
     }
 
-    // 30s Clip auf dem Smartphone aufzeichnen & in der Handy-Galerie ablegen
-    function recordPhoneLiveClip(seconds, eventName, timestamp, thumbData) {
-      const v = document.getElementById('remoteVideo');
-      if (!v.srcObject) return;
-
-      let chunks = [];
-      let rec;
-      try {
-        rec = new MediaRecorder(v.srcObject);
-      } catch(e) {
-        return;
-      }
-
-      const thumb = thumbData || captureThumbnail(v);
-
-      rec.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
-      rec.onstop = () => {
-        const blob = new Blob(chunks, { type: 'video/webm' });
-        saveClipToMobileDrawer(blob, `${eventName} - ${timestamp}`, thumb);
-      };
-
-      rec.start();
-      setTimeout(() => {
-        if (rec.state === 'recording') rec.stop();
-      }, seconds * 1000);
-    }
-
-    let mobileClipsCount = 0;
+    // Clip in der Handy-Galerie ablegen
     function saveClipToMobileDrawer(blob, title, thumbData) {
       document.getElementById('noDrawerClipsMsg')?.remove();
       mobileClipsCount++;
@@ -865,14 +895,14 @@
       const url = URL.createObjectURL(blob);
       const list = document.getElementById('drawerClipsList');
       const item = document.createElement('div');
-      item.className = "bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex items-center justify-between gap-3";
+      item.className = "bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex items-center justify-between gap-3 shadow-md";
 
       const thumbHtml = thumbData 
         ? `<img src="${thumbData}" class="w-16 h-10 object-cover rounded-lg border border-slate-800 shrink-0">`
         : `<div class="w-16 h-10 bg-slate-900 rounded-lg flex items-center justify-center shrink-0"><i data-lucide="film" class="w-4 h-4 text-slate-500"></i></div>`;
 
       item.innerHTML = `
-        <div class="flex items-center gap-3 overflow-hidden cursor-pointer" onclick="closeClipsDrawer(); playClipInModal('${url}', '${title}');">
+        <div class="flex items-center gap-3 overflow-hidden cursor-pointer flex-1" onclick="closeClipsDrawer(); playClipInModal('${url}', '${title}');">
           <div class="relative shrink-0">
             ${thumbHtml}
             <div class="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center">
@@ -882,17 +912,24 @@
           <div class="flex flex-col overflow-hidden">
             <span class="truncate font-semibold text-slate-200 text-xs">${title.split(' - ')[0]}</span>
             <span class="font-mono text-[10px] text-slate-400">${title.split(' - ')[1] || ''}</span>
-            <span class="text-[10px] text-emerald-400 font-mono">30 Sek. Video</span>
+            <span class="text-[10px] text-emerald-400 font-mono">30 Sek. Aufnahme</span>
           </div>
         </div>
         <div class="flex gap-1.5 shrink-0">
-          <button type="button" onclick="closeClipsDrawer(); playClipInModal('${url}', '${title}');" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer">
-            <i data-lucide="play" class="w-3 h-3"></i> Play
+          <button type="button" onclick="closeClipsDrawer(); playClipInModal('${url}', '${title}');" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer">
+            <i data-lucide="play" class="w-3.5 h-3.5"></i> Play
           </button>
         </div>
       `;
       list.prepend(item);
       try { if (window.lucide) lucide.createIcons(); } catch(e) {}
+    }
+
+    function triggerRemoteTestAlarm() {
+      if (dataConnection && dataConnection.open) {
+        dataConnection.send({ type: 'TEST_ALARM' });
+        alert("30s Aufnahme & E-Mail am PC ausgelöst!");
+      }
     }
 
     function forgetSavedCam() {
@@ -910,12 +947,12 @@
       const icon = document.getElementById('alarmToggleIcon');
 
       if (isAlarmArmed) {
-        btn.className = "col-span-2 bg-emerald-950/80 border border-emerald-700 p-3 rounded-xl flex items-center justify-center gap-2 cursor-pointer";
+        btn.className = "col-span-2 bg-emerald-950/80 border border-emerald-700 p-3.5 rounded-xl flex items-center justify-center gap-2 cursor-pointer";
         text.innerText = "Alarme: AN";
         text.className = "text-xs font-bold text-emerald-300";
         icon.className = "w-5 h-5 text-emerald-400";
       } else {
-        btn.className = "col-span-2 bg-slate-800 border border-slate-700 p-3 rounded-xl flex items-center justify-center gap-2 cursor-pointer";
+        btn.className = "col-span-2 bg-slate-800 border border-slate-700 p-3.5 rounded-xl flex items-center justify-center gap-2 cursor-pointer";
         text.innerText = "Alarme: AUS";
         text.className = "text-xs font-bold text-slate-400";
         icon.className = "w-5 h-5 text-slate-500";
@@ -961,7 +998,7 @@
     function triggerRemoteSiren() {
       if (dataConnection && dataConnection.open) {
         dataConnection.send({ type: 'SIREN' });
-        alert("Sirene ausgelöst!");
+        alert("Sirene am PC ausgelöst!");
       }
     }
 
