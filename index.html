@@ -12,16 +12,25 @@
   <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
   <style>
-    .clean-night-vision { filter: brightness(2.2) contrast(1.3) !important; }
-    button { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+    /* Saubere Infrarot-Nachtsicht: Maximale Helligkeit & Kontrast */
+    .night-vision-active {
+      filter: brightness(3.0) contrast(1.8) grayscale(1) !important;
+    }
+    button {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans overflow-x-hidden">
 
   <!-- ========================================== -->
-  <!-- PC TARN-MODUS OVERLAY (Z-INDEX 99999)      -->
+  <!-- PC RAUM-BELEUCHTUNG (FLUTLICHT Z-INDEX 100000) -->
   <!-- ========================================== -->
-  <div id="pcBlackoutOverlay" ondblclick="togglePcBlackout()" style="display: none; position: fixed; inset: 0; background-color: black; z-index: 99999; cursor: pointer; flex-direction: column; align-items: center; justify-content: center;">
+  <div id="pcTorchLight" style="display: none; position: fixed; inset: 0; background-color: #ffffff; z-index: 100000; width: 100vw; height: 100vh;"></div>
+
+  <!-- PC TARN-MODUS (SCHWARZER BILDSCHIRM Z-INDEX 99999) -->
+  <div id="pcBlackoutOverlay" ondblclick="togglePcBlackout()" style="display: none; position: fixed; inset: 0; background-color: #000000; z-index: 99999; cursor: pointer; flex-direction: column; align-items: center; justify-content: center;">
     <span style="color: #222; font-size: 11px; user-select: none;">SafeCam aktiv [ESC oder Doppelklick zum Aufwecken]</span>
   </div>
 
@@ -41,15 +50,18 @@
       </div>
 
       <div class="relative aspect-video bg-black rounded-xl overflow-hidden flex items-center justify-center">
-        <!-- iOS Playsinline & Preload für sofortiges Abspielen auf Apple-Geräten -->
         <video id="modalVideoPlayer" controls playsinline webkit-playsinline preload="auto" class="w-full h-full object-contain"></video>
+      </div>
+
+      <div id="videoFallbackNotice" style="display: none;" class="p-2 bg-amber-950/60 border border-amber-800 rounded-lg text-amber-300 text-xs text-center">
+        Tippe auf den Download-Button unten, um das Video direkt in deiner Foto-App anzusehen.
       </div>
 
       <div class="flex justify-between items-center pt-2">
         <span class="text-xs text-slate-400">30 Sekunden Aufnahme</span>
         <div class="flex gap-2">
           <a id="modalDownloadBtn" download class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer">
-            <i data-lucide="download" class="w-4 h-4"></i> Download
+            <i data-lucide="download" class="w-4 h-4"></i> Herunterladen
           </a>
           <button type="button" onclick="closeVideoModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-xl text-xs cursor-pointer">Schließen</button>
         </div>
@@ -110,7 +122,7 @@
       </div>
       <div>
         <div class="font-bold text-lg text-white">Kamera-Station (PC)</div>
-        <div class="text-xs text-emerald-200">60 FPS, MP4-Clips, Auto-Tarnung & E-Mail</div>
+        <div class="text-xs text-emerald-200">Auto-Nachtsicht, Flutlicht & 30s MP4-Clips</div>
       </div>
     </button>
 
@@ -120,7 +132,7 @@
       </div>
       <div>
         <div class="font-bold text-lg text-white">Monitor-Viewer (Handy)</div>
-        <div class="text-xs text-blue-200">60 FPS Stream & gespeicherte Videos ansehen</div>
+        <div class="text-xs text-blue-200">Live-Bild, Nachtsicht, Licht-Schalter & Videos</div>
       </div>
     </button>
   </div>
@@ -141,17 +153,16 @@
           <span id="camOsdTime" class="text-slate-200">0000-00-00 00:00:00</span>
         </div>
 
-        <div id="recordingTimerBadge" class="hidden absolute top-3 inset-x-0 mx-auto w-max bg-red-600 text-white font-mono text-xs px-3 py-1 rounded-full font-bold animate-pulse shadow-lg flex items-center gap-2">
+        <!-- Automatische Nachtsicht Badge -->
+        <div id="camNightVisionBadge" class="hidden absolute top-3 right-3 bg-emerald-950/90 text-emerald-400 border border-emerald-700 px-3 py-1 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 shadow-lg">
+          <i data-lucide="moon" class="w-4 h-4 text-emerald-400"></i>
+          <span>NACHTSICHT (AUTO)</span>
+        </div>
+
+        <div id="recordingTimerBadge" class="hidden absolute top-12 inset-x-0 mx-auto w-max bg-red-600 text-white font-mono text-xs px-3 py-1 rounded-full font-bold animate-pulse shadow-lg flex items-center gap-2">
           <span class="w-2 h-2 bg-white rounded-full"></span>
           <span>NIMMT 30s CLIP AUF... (<span id="recCountdown">30</span>s)</span>
         </div>
-
-        <div class="absolute top-3 right-3 flex gap-2">
-          <div id="motionBadge" class="hidden bg-amber-500 text-black px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wider animate-pulse flex items-center gap-1">
-            <i data-lucide="activity" class="w-3.5 h-3.5"></i> Bewegung
-          </div>
-        </div>
-        <div id="screenTorchOverlay" class="absolute inset-0 bg-white opacity-0 pointer-events-none transition-opacity duration-300 z-40"></div>
       </div>
 
       <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col gap-4">
@@ -216,9 +227,15 @@
       </div>
     </div>
 
-    <!-- Live Monitor 60 FPS -->
+    <!-- Live Monitor Feed (60 FPS mit automatischer Nachtsicht) -->
     <div id="liveStreamWrapper" class="relative bg-black rounded-2xl overflow-hidden border border-slate-800 shadow-2xl aspect-video w-full flex items-center justify-center">
       <video id="remoteVideo" autoplay playsinline muted class="w-full h-full object-contain bg-black"></video>
+
+      <!-- Nachtsicht-Indikator -->
+      <div id="viewerNightVisionBadge" class="hidden absolute top-3 left-1/2 -translate-x-1/2 bg-emerald-950/90 text-emerald-400 border border-emerald-700 px-3 py-1 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 shadow-lg">
+        <i data-lucide="moon" class="w-3.5 h-3.5"></i>
+        <span id="nightVisionBadgeText">NACHTSICHT AKTIV</span>
+      </div>
 
       <button id="audioToggleBtn" type="button" onclick="toggleAudio()" class="absolute top-3 right-3 z-30 bg-black/60 hover:bg-black/80 backdrop-blur px-3 py-1.5 rounded-xl border border-slate-700 font-mono text-xs text-white flex items-center gap-1.5 cursor-pointer">
         <i data-lucide="volume-x" class="w-4 h-4 text-amber-400" id="audioToggleIcon"></i>
@@ -239,46 +256,53 @@
       </div>
     </div>
 
-    <!-- Handy Steuerung -->
+    <!-- Handy Steuerungskonsole -->
     <div class="grid grid-cols-4 gap-2 bg-slate-900 border border-slate-800 p-3 rounded-2xl">
+      
+      <!-- HAUPTKNOPF: GESPEICHERTE VIDEOS -->
       <button id="btnOpenDrawer" type="button" onclick="openClipsDrawer()" class="col-span-2 bg-gradient-to-r from-emerald-600 to-teal-700 active:scale-95 border border-emerald-500/40 p-3.5 rounded-xl flex items-center justify-center gap-2 cursor-pointer shadow-lg">
         <i data-lucide="film" class="w-5 h-5 text-white"></i>
         <span class="text-xs font-bold text-white">Videos (30s)</span>
         <span id="mobileClipCounter" class="bg-black/40 text-emerald-300 text-[10px] font-mono px-2 py-0.5 rounded-full font-bold">0</span>
       </button>
 
+      <!-- Alarm Scharf / Unscharf -->
       <button id="alarmToggleBtn" type="button" onclick="toggleAlarmArming()" class="col-span-2 bg-emerald-950/80 border border-emerald-700 p-3.5 rounded-xl flex items-center justify-center gap-2 cursor-pointer">
         <i data-lucide="bell" class="w-5 h-5 text-emerald-400" id="alarmToggleIcon"></i>
         <span class="text-xs font-bold text-emerald-300" id="alarmToggleText">Alarme: AN</span>
       </button>
 
+      <!-- RAUM-BELEUCHTUNG (PC FLUTLICHT WEISS) -->
+      <button id="torchBtn" type="button" onclick="toggleRemoteTorch()" class="col-span-2 bg-slate-800 active:scale-95 border border-slate-700 p-3 rounded-xl flex items-center justify-center gap-2 cursor-pointer">
+        <i data-lucide="sun-medium" class="w-5 h-5 text-amber-400" id="torchIcon"></i>
+        <span class="text-xs font-bold text-slate-200" id="torchText">💡 Raum-Licht: AUS</span>
+      </button>
+
+      <!-- NACHTSICHT MODUS (AUTO / MANUELL) -->
+      <button id="nightVisionBtn" type="button" onclick="cycleNightVision()" class="col-span-2 bg-slate-800 active:scale-95 border border-slate-700 p-3 rounded-xl flex items-center justify-center gap-2 cursor-pointer">
+        <i data-lucide="moon" class="w-5 h-5 text-emerald-400" id="nightVisionIcon"></i>
+        <span class="text-xs font-bold text-emerald-300" id="nightVisionText">🌙 Nachtsicht: AUTO</span>
+      </button>
+
+      <!-- Test-Alarm -->
       <button type="button" onclick="triggerRemoteTestAlarm()" class="col-span-2 bg-rose-950/80 hover:bg-rose-900/80 border border-rose-800 p-2.5 rounded-xl flex items-center justify-center gap-2 cursor-pointer text-rose-300 font-bold text-xs">
         <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-400"></i> Test-Alarm auslösen
       </button>
 
+      <!-- Push-to-Talk (Gegensprechanlage) -->
       <button id="pttBtn" type="button" class="col-span-2 bg-slate-800 active:bg-emerald-600 border border-slate-700 p-2.5 rounded-xl flex items-center justify-center gap-2 select-none cursor-pointer">
         <i data-lucide="mic" class="w-4 h-4 text-emerald-400"></i>
         <span class="text-xs font-bold text-slate-200">Sprechen (Halten)</span>
       </button>
 
-      <button type="button" onclick="toggleCleanNightVision()" class="bg-slate-800 active:scale-95 border border-slate-700 p-2.5 rounded-xl flex flex-col items-center justify-center gap-1 cursor-pointer">
-        <i data-lucide="sun" class="w-4 h-4 text-amber-400"></i>
-        <span class="text-[10px] font-bold text-slate-200">Helligkeit</span>
-      </button>
-
-      <button type="button" onclick="triggerRemoteSiren()" class="bg-slate-800 active:scale-95 border border-slate-700 p-2.5 rounded-xl flex flex-col items-center justify-center gap-1 cursor-pointer">
+      <button type="button" onclick="triggerRemoteSiren()" class="col-span-2 bg-slate-800 active:scale-95 border border-slate-700 p-2.5 rounded-xl flex items-center justify-center gap-2 cursor-pointer">
         <i data-lucide="megaphone" class="w-4 h-4 text-rose-500"></i>
-        <span class="text-[10px] font-bold text-slate-200">Sirene</span>
+        <span class="text-xs font-bold text-slate-200">Sirene</span>
       </button>
 
-      <button type="button" onclick="triggerRemoteTorch()" class="bg-slate-800 active:scale-95 border border-slate-700 p-2.5 rounded-xl flex flex-col items-center justify-center gap-1 cursor-pointer">
-        <i data-lucide="flashlight" class="w-4 h-4 text-yellow-400"></i>
-        <span class="text-[10px] font-bold text-slate-200">Licht</span>
-      </button>
-
-      <button type="button" onclick="forgetSavedCam()" class="bg-slate-800 active:scale-95 border border-slate-700 p-2.5 rounded-xl flex flex-col items-center justify-center gap-1 cursor-pointer" title="Entkoppeln">
+      <button type="button" onclick="forgetSavedCam()" class="col-span-2 bg-slate-800 active:scale-95 border border-slate-700 p-2.5 rounded-xl flex items-center justify-center gap-2 cursor-pointer" title="Entkoppeln">
         <i data-lucide="trash-2" class="w-4 h-4 text-red-400"></i>
-        <span class="text-[10px] font-bold text-slate-200">Trennen</span>
+        <span class="text-xs font-bold text-slate-200">Trennen</span>
       </button>
     </div>
 
@@ -312,9 +336,9 @@
     window.disablePcBlackout = disablePcBlackout;
     window.togglePcBlackout = togglePcBlackout;
     window.toggleAlarmArming = toggleAlarmArming;
-    window.toggleCleanNightVision = toggleCleanNightVision;
+    window.cycleNightVision = cycleNightVision;
+    window.toggleRemoteTorch = toggleRemoteTorch;
     window.triggerRemoteSiren = triggerRemoteSiren;
-    window.triggerRemoteTorch = triggerRemoteTorch;
     window.triggerRemoteTestAlarm = triggerRemoteTestAlarm;
     window.triggerAlarm = triggerAlarm;
     window.forgetSavedCam = forgetSavedCam;
@@ -324,14 +348,20 @@
     let localStream = null;
     let mediaRecorder = null;
     let recordedChunks = [];
-    let isBrightened = false;
     let isAlarmArmed = true;
     let isRecordingNow = false;
     let clipCounter = 0;
     let mobileClipsCount = 0;
 
+    // Nachtsicht-Steuerung: 'auto', 'on', 'off'
+    let nightVisionMode = 'auto';
+    let isDarkDetected = false;
+    let isTorchOn = false;
+
+    // Geordnete Video-Übertragung
     let incomingClipMeta = null;
-    let incomingClipChunks = [];
+    let incomingClipChunks = null;
+    let receivedChunksCount = 0;
 
     const peerOptions = {
       config: {
@@ -343,7 +373,7 @@
     };
 
     // ==========================================
-    // INDEXED-DB: PERMANENTE SPEICHERUNG DER CLIPS
+    // PERMANENTE INDEXED-DB SPEICHERUNG
     // ==========================================
     const DB_NAME = 'SafeCamStorage';
     const DB_VERSION = 1;
@@ -394,7 +424,6 @@
       } catch(e) {}
     }
 
-    // Beim Laden alle bisherigen permanenten Clips aus der DB holen
     async function loadSavedClipsOnStartup(isPc) {
       const clips = await dbGetAllClips();
       clips.forEach(clip => {
@@ -407,7 +436,7 @@
     }
 
     async function clearAllClips() {
-      if (confirm("Möchtest du wirklich alle gespeicherten Videos unwiderruflich löschen?")) {
+      if (confirm("Möchtest du wirklich alle gespeicherten Videos löschen?")) {
         await dbClearAllClips();
         document.getElementById('drawerClipsList').innerHTML = `
           <div id="noDrawerClipsMsg" class="text-slate-500 py-12 text-center flex flex-col items-center gap-2">
@@ -421,7 +450,7 @@
       }
     }
 
-    // Welches Videoformat unterstützt das Gerät? (iPhone bevorzugt MP4 / H.264)
+    // iPhone-kompatibles Aufnahmeformat ermitteln
     function getBestRecordingMimeType() {
       const candidates = [
         'video/mp4;codecs=avc1,mp4a.40.2',
@@ -432,10 +461,7 @@
         'video/webm'
       ];
       for (const t of candidates) {
-        if (MediaRecorder.isTypeSupported(t)) {
-          console.log("Gewähltes Aufnahme-Format:", t);
-          return t;
-        }
+        if (MediaRecorder.isTypeSupported(t)) return t;
       }
       return '';
     }
@@ -466,7 +492,7 @@
     }, 1000);
 
     // ==========================================
-    // TARN-MODUS (SCHWARZER BILDSCHIRM)
+    // TARN-MODUS & FLUTLICHT STEUERUNG
     // ==========================================
     function enablePcBlackout() {
       document.getElementById('pcBlackoutOverlay').style.display = 'flex';
@@ -497,8 +523,15 @@
       const player = document.getElementById('modalVideoPlayer');
       const titleElem = document.getElementById('modalClipTitle');
       const downloadBtn = document.getElementById('modalDownloadBtn');
+      const fallbackNotice = document.getElementById('videoFallbackNotice');
 
       titleElem.innerText = title;
+      fallbackNotice.style.display = 'none';
+
+      player.pause();
+      player.removeAttribute('src');
+      player.load();
+
       player.src = url;
       if (mimeType) player.type = mimeType;
 
@@ -507,8 +540,19 @@
       downloadBtn.download = title.replace(/[: ]/g, '_') + ext;
 
       modal.style.display = 'flex';
-      player.load(); // Wichtig für iOS Safari!
-      player.play().catch(e => console.log("Play log:", e));
+      player.load();
+
+      // iOS Safari Play-Trigger
+      const playPromise = player.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          // Falls iOS Autoplay blockiert, kann der Nutzer normal den Player-Knopf tippen
+        });
+      }
+
+      player.onerror = () => {
+        fallbackNotice.style.display = 'block';
+      };
     }
 
     function closeVideoModal() {
@@ -546,7 +590,7 @@
     }
 
     // ==========================================
-    // 1. KAMERA-STATION (PC - 60 FPS)
+    // 1. KAMERA-STATION (PC - 60 FPS & AUTO-NACHTSICHT)
     // ==========================================
     async function startCameraMode() {
       document.getElementById('modeSelection').style.display = 'none';
@@ -555,7 +599,6 @@
       loadSavedClipsOnStartup(true);
 
       try {
-        // Flüssige 60 FPS anfordern
         const videoConstraints = {
           width: { ideal: 1280, max: 1920 },
           height: { ideal: 720, max: 1080 },
@@ -593,7 +636,7 @@
           });
         });
 
-        // WICHTIG: Sobald das Smartphone verbindet, PC-Bildschirm schwarz schalten!
+        // WICHTIG: Sobald sich das Smartphone verbindet, PC-Bildschirm schwarz schalten!
         peer.on('connection', (conn) => {
           dataConnection = conn;
           document.getElementById('statusText').innerText = "Verbunden";
@@ -602,17 +645,18 @@
           // PC AUTOMATISCH SCHWARZ SCHALTEN
           setTimeout(() => {
             enablePcBlackout();
-          }, 1200);
+          }, 1000);
 
           conn.on('data', (data) => {
             if (data.type === 'REQUEST_STREAM') peer.call(data.viewerId, localStream);
             if (data.type === 'ARM_STATUS') isAlarmArmed = data.armed;
             if (data.type === 'TEST_ALARM') triggerAlarm('Manueller Handy-Test');
             if (data.type === 'SIREN') playLocalSiren();
-            if (data.type === 'TORCH') {
-              const torch = document.getElementById('screenTorchOverlay');
-              torch.style.opacity = '1';
-              setTimeout(() => torch.style.opacity = '0', 2500);
+
+            // RAUM-BELEUCHTUNG: PC Bildschirm wird weißes Flutlicht!
+            if (data.type === 'TORCH_TOGGLE') {
+              const torch = document.getElementById('pcTorchLight');
+              torch.style.display = data.state ? 'block' : 'none';
             }
           });
         });
@@ -626,15 +670,15 @@
           });
         });
 
-        initMotionDetection();
+        initMotionAndLuminanceDetection();
 
       } catch (err) {
         alert("Kamera-Fehler: " + err.message);
       }
     }
 
-    // Extrem leichtgewichtige Bewegungserkennung (unter 0.1ms Rechenzeit)
-    function initMotionDetection() {
+    // Bewegungserkennung & Automatische Nachtsicht (Luminanz-Messung)
+    function initMotionAndLuminanceDetection() {
       const video = document.getElementById('localVideo');
       const canvas = document.getElementById('motionCanvas');
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
@@ -648,22 +692,51 @@
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         const currentFrame = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-        if (prevFrame) {
-          let diffScore = 0;
-          const len = currentFrame.data.length;
-          for (let i = 0; i < len; i += 16) {
+        let totalLuma = 0;
+        let diffScore = 0;
+        const len = currentFrame.data.length;
+
+        // 1. Helligkeit im Raum berechnen (0 = Pechschwarz, 255 = Hell)
+        for (let i = 0; i < len; i += 16) {
+          totalLuma += currentFrame.data[i] * 0.299 + currentFrame.data[i+1] * 0.587 + currentFrame.data[i+2] * 0.114;
+
+          if (prevFrame) {
             const diff = Math.abs(currentFrame.data[i] - prevFrame.data[i]) +
                          Math.abs(currentFrame.data[i+1] - prevFrame.data[i+1]) +
                          Math.abs(currentFrame.data[i+2] - prevFrame.data[i+2]);
             if (diff > 50) diffScore++;
           }
+        }
 
-          if (diffScore > 12 && !motionCooldown && isAlarmArmed) {
-            triggerAlarm("Bewegung erkannt!");
-            motionCooldown = true;
-            setTimeout(() => { motionCooldown = false; }, 35000);
+        const avgLuma = totalLuma / (len / 16);
+
+        // AUTOMATISCHE NACHTSICHT BEI DUNKELHEIT
+        const pcNightBadge = document.getElementById('camNightVisionBadge');
+        if (avgLuma < 35 && !isDarkDetected) {
+          isDarkDetected = true;
+          video.classList.add('night-vision-active');
+          pcNightBadge.classList.remove('hidden');
+
+          if (dataConnection && dataConnection.open) {
+            dataConnection.send({ type: 'AUTO_NIGHT_VISION', active: true });
+          }
+        } else if (avgLuma >= 45 && isDarkDetected) {
+          isDarkDetected = false;
+          video.classList.remove('night-vision-active');
+          pcNightBadge.classList.add('hidden');
+
+          if (dataConnection && dataConnection.open) {
+            dataConnection.send({ type: 'AUTO_NIGHT_VISION', active: false });
           }
         }
+
+        // Bewegungserkennung
+        if (prevFrame && diffScore > 12 && !motionCooldown && isAlarmArmed) {
+          triggerAlarm("Bewegung erkannt!");
+          motionCooldown = true;
+          setTimeout(() => { motionCooldown = false; }, 35000);
+        }
+
         prevFrame = currentFrame;
       }, 300);
     }
@@ -686,8 +759,10 @@
       const thumbData = captureThumbnail(document.getElementById('localVideo'));
 
       const b = document.getElementById('motionBadge');
-      b.classList.remove('hidden');
-      setTimeout(() => b.classList.add('hidden'), 5000);
+      if (b) {
+        b.classList.remove('hidden');
+        setTimeout(() => b.classList.add('hidden'), 5000);
+      }
 
       sendEmailAlert(msg, timestamp);
 
@@ -725,7 +800,7 @@
       });
     }
 
-    // 30s Clip aufnehmen (bevorzugt MP4 für iPhone!)
+    // 30s Clip aufnehmen (MP4 für iPhone)
     function recordLocalPcClip(seconds, eventName, timestamp, thumbData) {
       if (isRecordingNow) return;
       isRecordingNow = true;
@@ -764,11 +839,10 @@
         const blob = new Blob(recordedChunks, { type: mime });
         const clipTitle = `${eventName} - ${timestamp}`;
 
-        // In permanenter IndexedDB speichern
         await dbSaveClip({ title: clipTitle, thumb: thumbData, blob: blob, mimeType: mime, timestamp: timestamp });
 
         renderClipInPcGallery(blob, clipTitle, thumbData, mime);
-        sendVideoToPhone(blob, clipTitle, thumbData, mime);
+        sendVideoToPhoneSafely(blob, clipTitle, thumbData, mime);
 
         isRecordingNow = false;
       };
@@ -779,25 +853,34 @@
       }, seconds * 1000);
     }
 
-    function sendVideoToPhone(blob, title, thumb, mimeType) {
+    // Fluss-gesteuerte fehlerfreie Video-Übertragung an das Smartphone
+    async function sendVideoToPhoneSafely(blob, title, thumb, mimeType) {
       if (!dataConnection || !dataConnection.open) return;
 
-      blob.arrayBuffer().then(buffer => {
-        dataConnection.send({
-          type: 'VIDEO_TRANSFER_START',
-          title: title,
-          thumb: thumb,
-          mimeType: mimeType,
-          byteLength: buffer.byteLength
-        });
+      const buffer = await blob.arrayBuffer();
+      const chunkSize = 16384; // 16 KB
+      const totalChunks = Math.ceil(buffer.byteLength / chunkSize);
 
-        const chunkSize = 16384;
-        for (let offset = 0; offset < buffer.byteLength; offset += chunkSize) {
-          dataConnection.send(buffer.slice(offset, offset + chunkSize));
-        }
-
-        dataConnection.send({ type: 'VIDEO_TRANSFER_END' });
+      dataConnection.send({
+        type: 'VIDEO_TRANSFER_START',
+        title: title,
+        thumb: thumb,
+        mimeType: mimeType,
+        totalChunks: totalChunks
       });
+
+      // Pakete mit Pause senden, um Datenverlust / durchgestrichenes Play zu verhindern
+      for (let i = 0; i < totalChunks; i++) {
+        const slice = buffer.slice(i * chunkSize, (i + 1) * chunkSize);
+        dataConnection.send({
+          type: 'VIDEO_CHUNK',
+          index: i,
+          data: slice
+        });
+        await new Promise(r => setTimeout(r, 12));
+      }
+
+      dataConnection.send({ type: 'VIDEO_TRANSFER_END' });
     }
 
     function renderClipInPcGallery(blob, title, thumbData, mimeType) {
@@ -915,6 +998,13 @@
       });
 
       dataConnection.on('data', async (data) => {
+        // AUTOMATISCHE NACHTSICHT VOM PC EMPFANGEN
+        if (data.type === 'AUTO_NIGHT_VISION') {
+          if (nightVisionMode === 'auto') {
+            applyNightVisionState(data.active, true);
+          }
+        }
+
         if (data.type === 'ALERT') {
           if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
           const banner = document.getElementById('alertBanner');
@@ -935,34 +1025,42 @@
           log.prepend(entry);
         }
 
+        // PAKET-WEISE FEHLERFREIE VIDEO-REKONSTRUKTION
         if (data.type === 'VIDEO_TRANSFER_START') {
-          incomingClipChunks = [];
           incomingClipMeta = data;
+          incomingClipChunks = new Array(data.totalChunks);
+          receivedChunksCount = 0;
         }
 
-        if (data instanceof ArrayBuffer) {
-          incomingClipChunks.push(data);
+        if (data.type === 'VIDEO_CHUNK') {
+          if (incomingClipChunks) {
+            incomingClipChunks[data.index] = data.data;
+            receivedChunksCount++;
+          }
         }
 
         if (data.type === 'VIDEO_TRANSFER_END' && incomingClipMeta) {
-          const videoBlob = new Blob(incomingClipChunks, { type: incomingClipMeta.mimeType || 'video/mp4' });
-          
-          // Permanent in Handy-IndexedDB speichern!
-          await dbSaveClip({
-            title: incomingClipMeta.title,
-            thumb: incomingClipMeta.thumb,
-            blob: videoBlob,
-            mimeType: incomingClipMeta.mimeType || 'video/mp4'
-          });
+          const validChunks = incomingClipChunks.filter(c => c !== undefined);
 
-          renderClipInMobileDrawer(videoBlob, incomingClipMeta.title, incomingClipMeta.thumb, incomingClipMeta.mimeType);
+          if (validChunks.length === incomingClipMeta.totalChunks) {
+            const videoBlob = new Blob(validChunks, { type: incomingClipMeta.mimeType || 'video/mp4' });
+            
+            await dbSaveClip({
+              title: incomingClipMeta.title,
+              thumb: incomingClipMeta.thumb,
+              blob: videoBlob,
+              mimeType: incomingClipMeta.mimeType || 'video/mp4'
+            });
 
-          incomingClipChunks = [];
+            renderClipInMobileDrawer(videoBlob, incomingClipMeta.title, incomingClipMeta.thumb, incomingClipMeta.mimeType);
+
+            const banner = document.getElementById('alertBanner');
+            document.getElementById('alertBannerText').innerText = `30s Video empfangen! Tippe auf "Videos (30s)"`;
+            banner.classList.remove('hidden');
+          }
+
+          incomingClipChunks = null;
           incomingClipMeta = null;
-
-          const banner = document.getElementById('alertBanner');
-          document.getElementById('alertBannerText').innerText = `30s Video empfangen! Tippe auf "Videos (30s)"`;
-          banner.classList.remove('hidden');
         }
       });
 
@@ -1012,6 +1110,64 @@
       try { if (window.lucide) lucide.createIcons(); } catch(e) {}
     }
 
+    // ==========================================
+    // NACHTSICHT & RAUM-BELEUCHTUNG STEUERUNG
+    // ==========================================
+    function applyNightVisionState(active, isAuto) {
+      const v = document.getElementById('remoteVideo');
+      const badge = document.getElementById('viewerNightVisionBadge');
+      const badgeText = document.getElementById('nightVisionBadgeText');
+
+      if (active) {
+        v.classList.add('night-vision-active');
+        badge.classList.remove('hidden');
+        badgeText.innerText = isAuto ? "NACHTSICHT (AUTO)" : "NACHTSICHT (MANUELL)";
+      } else {
+        v.classList.remove('night-vision-active');
+        badge.classList.add('hidden');
+      }
+    }
+
+    // Umschalten: AUTO -> AN -> AUS
+    function cycleNightVision() {
+      const text = document.getElementById('nightVisionText');
+
+      if (nightVisionMode === 'auto') {
+        nightVisionMode = 'on';
+        text.innerText = "🌙 Nachtsicht: AN";
+        applyNightVisionState(true, false);
+      } else if (nightVisionMode === 'on') {
+        nightVisionMode = 'off';
+        text.innerText = "🌙 Nachtsicht: AUS";
+        applyNightVisionState(false, false);
+      } else {
+        nightVisionMode = 'auto';
+        text.innerText = "🌙 Nachtsicht: AUTO";
+        applyNightVisionState(isDarkDetected, true);
+      }
+    }
+
+    // RAUM-LICHT: PC Bildschirm wird grell weiß!
+    function toggleRemoteTorch() {
+      isTorchOn = !isTorchOn;
+      const text = document.getElementById('torchText');
+      const icon = document.getElementById('torchIcon');
+
+      if (isTorchOn) {
+        text.innerText = "💡 Raum-Licht: AN";
+        text.className = "text-xs font-bold text-amber-300";
+        icon.className = "w-5 h-5 text-amber-300 animate-pulse";
+      } else {
+        text.innerText = "💡 Raum-Licht: AUS";
+        text.className = "text-xs font-bold text-slate-200";
+        icon.className = "w-5 h-5 text-amber-400";
+      }
+
+      if (dataConnection && dataConnection.open) {
+        dataConnection.send({ type: 'TORCH_TOGGLE', state: isTorchOn });
+      }
+    }
+
     function triggerRemoteTestAlarm() {
       if (dataConnection && dataConnection.open) {
         dataConnection.send({ type: 'TEST_ALARM' });
@@ -1050,13 +1206,6 @@
       }
     }
 
-    function toggleCleanNightVision() {
-      isBrightened = !isBrightened;
-      const v = document.getElementById('remoteVideo');
-      if (isBrightened) v.classList.add('clean-night-vision');
-      else v.classList.remove('clean-night-vision');
-    }
-
     function setupPushToTalk() {
       const ptt = document.getElementById('pttBtn');
       let phoneMic = null;
@@ -1085,12 +1234,8 @@
     function triggerRemoteSiren() {
       if (dataConnection && dataConnection.open) {
         dataConnection.send({ type: 'SIREN' });
-        alert("Sirene ausgelöst!");
+        alert("Sirene am PC ausgelöst!");
       }
-    }
-
-    function triggerRemoteTorch() {
-      if (dataConnection && dataConnection.open) dataConnection.send({ type: 'TORCH' });
     }
 
     window.addEventListener('DOMContentLoaded', () => {
