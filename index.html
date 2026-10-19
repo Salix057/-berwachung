@@ -5,26 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>SafeCam Pro - Web Surveillance</title>
   
-  <!-- Tailwind CSS & Lucide Icons -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-  
-  <!-- PeerJS (WebRTC Signaling) -->
   <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-  
-  <!-- QR Code Generator & Scanner -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://unpkg.com/html5-qrcode"></script>
 
   <style>
-    /* Authentischer CCTV Nachtsicht-Filter */
     .night-vision {
       filter: brightness(2.6) contrast(2.2) grayscale(0.9) hue-rotate(85deg) drop-shadow(0 0 10px rgba(0,255,100,0.4)) !important;
     }
-    .night-vision-mono {
-      filter: brightness(3.0) contrast(2.0) grayscale(1) !important;
-    }
-    /* CRT Scanline Effekt */
     .scanlines {
       background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
       background-size: 100% 3px, 6px 100%;
@@ -46,11 +36,11 @@
     </div>
   </header>
 
-  <!-- Modus-Auswahl (Startbildschirm) -->
+  <!-- Start-Auswahl -->
   <div id="modeSelection" class="flex-1 flex flex-col items-center justify-center p-6 gap-6 max-w-md mx-auto w-full">
     <div class="text-center space-y-2">
       <h2 class="text-2xl font-bold text-slate-100">Geräte-Modus wählen</h2>
-      <p class="text-sm text-slate-400">Wähle die Rolle dieses Geräts aus:</p>
+      <p class="text-sm text-slate-400">Wähle die Rolle dieses Geräts:</p>
     </div>
 
     <button onclick="startCameraMode()" class="w-full bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 p-5 rounded-2xl flex items-center gap-4 shadow-xl border border-emerald-500/30 transition-transform active:scale-95 text-left">
@@ -69,24 +59,19 @@
       </div>
       <div>
         <div class="font-bold text-lg text-white">Monitor-Viewer (Handy)</div>
-        <div class="text-xs text-blue-200">Live-Bild empfangen, Push-to-Talk, Alarme</div>
+        <div class="text-xs text-blue-200">Live-Bild empfangen, Gegensprechanlage</div>
       </div>
     </button>
   </div>
 
-  <!-- ========================================== -->
-  <!-- KAMERA-STATION (PC-ANSICHT)                 -->
-  <!-- ========================================== -->
+  <!-- PC-ANSICHT -->
   <div id="cameraView" class="hidden flex-1 flex flex-col p-4 gap-4 max-w-6xl mx-auto w-full">
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1">
-      
-      <!-- Video Frame & Detection Area -->
       <div class="lg:col-span-2 relative bg-black rounded-2xl overflow-hidden border border-slate-800 shadow-2xl flex items-center justify-center min-h-[360px]">
         <video id="localVideo" autoplay playsinline muted class="w-full h-full object-cover"></video>
         <canvas id="motionCanvas" class="hidden"></canvas>
         <div class="scanlines absolute inset-0"></div>
 
-        <!-- OSD Timestamp Overlay -->
         <div class="absolute top-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-700 font-mono text-xs flex flex-col">
           <span class="text-red-500 font-bold flex items-center gap-1.5">
             <span class="w-2 h-2 rounded-full bg-red-600 animate-pulse"></span> REC LIVE
@@ -94,7 +79,6 @@
           <span id="camOsdTime" class="text-slate-200 tracking-wider">0000-00-00 00:00:00</span>
         </div>
 
-        <!-- Detection Indicators -->
         <div class="absolute top-3 right-3 flex gap-2">
           <div id="motionBadge" class="hidden bg-amber-500 text-black px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider animate-bounce flex items-center gap-1">
             <i data-lucide="activity" class="w-3.5 h-3.5"></i> Bewegung
@@ -103,41 +87,31 @@
             <i data-lucide="volume-2" class="w-3.5 h-3.5"></i> Geräusch
           </div>
         </div>
-
-        <!-- Raum-Beleuchtungsblitz -->
         <div id="screenTorchOverlay" class="absolute inset-0 bg-white opacity-0 pointer-events-none transition-opacity duration-300 z-50"></div>
       </div>
 
-      <!-- Pairing & Side Panel -->
       <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col gap-4">
         <h3 class="font-bold text-slate-200 flex items-center gap-2">
           <i data-lucide="qr-code" class="w-5 h-5 text-emerald-400"></i> Handy verbinden
         </h3>
-        
         <div class="bg-white p-3 rounded-xl mx-auto flex items-center justify-center" id="qrcode"></div>
-        
         <div class="text-center">
-          <div class="text-xs text-slate-400">Oder Verbindungs-Code manuell eingeben:</div>
+          <div class="text-xs text-slate-400">Oder Code manuell eingeben:</div>
           <div id="cameraPeerIdDisplay" class="font-mono text-emerald-400 font-bold text-sm tracking-wider bg-slate-950 p-2 rounded-lg mt-1 border border-slate-800 select-all cursor-pointer">
-            Generiere ID...
+            Warten...
           </div>
         </div>
-
         <div class="border-t border-slate-800 pt-3 space-y-3">
-          <h4 class="text-xs font-bold uppercase text-slate-400">Sensoren-Kalibrierung</h4>
-          
+          <h4 class="text-xs font-bold uppercase text-slate-400">Sensoren</h4>
           <div>
             <div class="flex justify-between text-xs text-slate-400 mb-1">
-              <span>Bewegungsempfindlichkeit:</span>
-              <span id="motionSensVal">Mittel</span>
+              <span>Bewegung:</span>
             </div>
             <input type="range" id="motionSensitivity" min="10" max="60" value="30" class="w-full accent-emerald-500">
           </div>
-
           <div>
             <div class="flex justify-between text-xs text-slate-400 mb-1">
-              <span>Geräuschempfindlichkeit:</span>
-              <span id="noiseSensVal">45 dB</span>
+              <span>Geräusch:</span>
             </div>
             <input type="range" id="noiseSensitivity" min="10" max="90" value="45" class="w-full accent-emerald-500">
           </div>
@@ -146,124 +120,108 @@
     </div>
   </div>
 
-  <!-- ========================================== -->
-  <!-- MONITOR-VIEWER (HANDY-ANSICHT)              -->
-  <!-- ========================================== -->
+  <!-- HANDY-ANSICHT -->
   <div id="viewerView" class="hidden flex-1 flex flex-col max-w-4xl mx-auto w-full p-2 md:p-4 gap-3">
-    
-    <!-- Connect Step (Falls noch nicht verbunden) -->
     <div id="viewerConnectCard" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
       <h3 class="text-lg font-bold text-white flex items-center gap-2">
         <i data-lucide="scan-line" class="w-5 h-5 text-blue-400"></i> Kamera koppeln
       </h3>
-      
       <div id="reader" class="rounded-xl overflow-hidden border border-slate-700 max-w-sm mx-auto"></div>
-
       <div class="flex gap-2">
         <input type="text" id="targetPeerId" placeholder="Code vom PC eingeben..." class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 font-mono text-sm focus:outline-none focus:border-blue-500">
-        <button onclick="connectToCamera(document.getElementById('targetPeerId').value)" class="bg-blue-600 hover:bg-blue-500 px-5 py-2.5 rounded-xl font-bold text-sm transition-transform active:scale-95">Verbinden</button>
+        <button onclick="initiateConnection(document.getElementById('targetPeerId').value)" class="bg-blue-600 hover:bg-blue-500 px-5 py-2.5 rounded-xl font-bold text-sm">Verbinden</button>
       </div>
     </div>
 
     <!-- Live Monitor Feed -->
     <div id="liveStreamWrapper" class="relative bg-black rounded-2xl overflow-hidden border border-slate-800 shadow-2xl aspect-video w-full flex items-center justify-center">
       <video id="remoteVideo" autoplay playsinline class="w-full h-full object-cover"></video>
-      <div class="scanlines absolute inset-0"></div>
+      <div class="scanlines absolute inset-0 pointer-events-none"></div>
 
-      <!-- OSD Datum / Zeit -->
+      <!-- Klick-Overlay für iOS/Android Autoplay-Freigabe -->
+      <button id="unmuteOverlayBtn" onclick="unlockVideoPlayback()" class="hidden absolute inset-0 z-30 bg-black/80 flex flex-col items-center justify-center gap-3">
+        <div class="bg-emerald-600 p-4 rounded-full shadow-lg animate-bounce">
+          <i data-lucide="play" class="w-8 h-8 text-white"></i>
+        </div>
+        <span class="text-sm font-bold text-white tracking-wide">Tippen zum Starten</span>
+      </button>
+
       <div class="absolute top-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded border border-slate-700 font-mono text-xs text-slate-100 flex items-center gap-2">
         <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
         <span id="remoteOsdTime">--:--:--</span>
       </div>
 
-      <!-- Nachtsicht-Indikator -->
       <div id="nightVisionBadge" class="hidden absolute top-3 right-3 bg-emerald-950 text-emerald-400 border border-emerald-700 px-2.5 py-1 rounded text-xs font-mono font-bold flex items-center gap-1">
-        <i data-lucide="moon" class="w-3.5 h-3.5"></i> IR-NIGHTVISION
+        <i data-lucide="moon" class="w-3.5 h-3.5"></i> NIGHTVISION
       </div>
 
-      <!-- Live Alarm-Meldung -->
-      <div id="alertBanner" class="hidden absolute bottom-4 inset-x-4 bg-rose-600/90 backdrop-blur-md text-white p-3 rounded-xl border border-rose-400 font-bold text-sm flex items-center justify-between shadow-2xl animate-pulse">
+      <div id="alertBanner" class="hidden absolute bottom-4 inset-x-4 bg-rose-600/95 backdrop-blur-md text-white p-3 rounded-xl border border-rose-400 font-bold text-sm flex items-center justify-between shadow-2xl animate-pulse">
         <div class="flex items-center gap-2">
           <i data-lucide="bell-ring" class="w-5 h-5"></i>
           <span id="alertBannerText">Bewegung festgestellt!</span>
         </div>
-        <button onclick="dismissAlert()" class="bg-white/20 px-2.5 py-1 rounded text-xs hover:bg-white/30">OK</button>
+        <button onclick="document.getElementById('alertBanner').classList.add('hidden')" class="bg-white/20 px-2.5 py-1 rounded text-xs">OK</button>
       </div>
     </div>
 
-    <!-- Handy Steuerungskonsole -->
-    <div class="grid grid-cols-4 sm:grid-cols-4 gap-2 bg-slate-900/90 backdrop-blur border border-slate-800 p-3 rounded-2xl">
-      
-      <!-- Push To Talk (Gegensprechanlage) -->
-      <button id="pttBtn" class="col-span-2 bg-slate-800 hover:bg-slate-700 active:bg-emerald-600 border border-slate-700 p-3 rounded-xl flex flex-col items-center justify-center gap-1 transition-all select-none">
+    <!-- Steuerung -->
+    <div class="grid grid-cols-4 gap-2 bg-slate-900 border border-slate-800 p-3 rounded-2xl">
+      <button id="pttBtn" class="col-span-2 bg-slate-800 active:bg-emerald-600 border border-slate-700 p-3 rounded-xl flex flex-col items-center justify-center gap-1 select-none">
         <i data-lucide="mic" class="w-6 h-6 text-emerald-400"></i>
-        <span class="text-xs font-bold text-slate-200">Gedrückt halten & sprechen</span>
+        <span class="text-xs font-bold text-slate-200">Sprechen (Halten)</span>
       </button>
 
-      <!-- Nachtsicht Umschalter -->
-      <button onclick="toggleNightVision()" class="bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 p-3 rounded-xl flex flex-col items-center justify-center gap-1">
+      <button onclick="toggleNightVision()" class="bg-slate-800 active:scale-95 border border-slate-700 p-3 rounded-xl flex flex-col items-center justify-center gap-1">
         <i data-lucide="moon" class="w-6 h-6 text-indigo-400"></i>
         <span class="text-xs font-bold text-slate-200">Nachtsicht</span>
       </button>
 
-      <!-- Sirenen Fernauslöser -->
-      <button onclick="triggerRemoteSiren()" class="bg-slate-800 hover:bg-rose-900/60 active:scale-95 border border-slate-700 p-3 rounded-xl flex flex-col items-center justify-center gap-1">
+      <button onclick="triggerRemoteSiren()" class="bg-slate-800 active:scale-95 border border-slate-700 p-3 rounded-xl flex flex-col items-center justify-center gap-1">
         <i data-lucide="megaphone" class="w-6 h-6 text-rose-500"></i>
         <span class="text-xs font-bold text-slate-200">Sirene</span>
       </button>
 
-      <!-- Beleuchtungs-Flash -->
-      <button onclick="triggerRemoteTorch()" class="bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 p-3 rounded-xl flex flex-col items-center justify-center gap-1">
+      <button onclick="triggerRemoteTorch()" class="bg-slate-800 active:scale-95 border border-slate-700 p-3 rounded-xl flex flex-col items-center justify-center gap-1">
         <i data-lucide="flashlight" class="w-6 h-6 text-amber-400"></i>
-        <span class="text-xs font-bold text-slate-200">Licht-Flash</span>
+        <span class="text-xs font-bold text-slate-200">Licht</span>
       </button>
 
-      <!-- Snapshot Foto -->
-      <button onclick="takeSnapshot()" class="bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 p-3 rounded-xl flex flex-col items-center justify-center gap-1">
+      <button onclick="takeSnapshot()" class="bg-slate-800 active:scale-95 border border-slate-700 p-3 rounded-xl flex flex-col items-center justify-center gap-1">
         <i data-lucide="camera" class="w-6 h-6 text-sky-400"></i>
         <span class="text-xs font-bold text-slate-200">Foto</span>
       </button>
 
-      <!-- Manuelle Clip-Aufnahme -->
-      <button id="manualRecBtn" onclick="toggleManualRecording()" class="col-span-2 bg-slate-800 hover:bg-slate-700 active:scale-95 border border-slate-700 p-3 rounded-xl flex flex-col items-center justify-center gap-1">
+      <button id="manualRecBtn" onclick="toggleManualRecording()" class="col-span-2 bg-slate-800 active:scale-95 border border-slate-700 p-3 rounded-xl flex flex-col items-center justify-center gap-1">
         <i data-lucide="video" class="w-6 h-6 text-red-500" id="recIcon"></i>
         <span class="text-xs font-bold text-slate-200" id="recBtnText">Clip aufnehmen</span>
       </button>
     </div>
 
-    <!-- Aufnahmen & Ereignis-Log Drawer -->
+    <!-- Galerie -->
     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex-1 flex flex-col">
       <div class="flex justify-between items-center mb-3">
         <h4 class="font-bold text-sm text-slate-200 flex items-center gap-2">
-          <i data-lucide="film" class="w-4 h-4 text-emerald-400"></i> Gespeicherte Ereignis-Clips
+          <i data-lucide="film" class="w-4 h-4 text-emerald-400"></i> Aufnahmen
         </h4>
-        <span id="clipCounter" class="text-xs text-slate-500 font-mono">0 Clips</span>
       </div>
       <div id="clipsGallery" class="flex-1 overflow-y-auto max-h-60 space-y-2 pr-1">
-        <div id="noClipsMsg" class="text-center py-6 text-xs text-slate-500">Noch keine Alarme oder Aufnahmen vorhanden.</div>
+        <div id="noClipsMsg" class="text-center py-6 text-xs text-slate-500">Noch keine Aufnahmen vorhanden.</div>
       </div>
     </div>
   </div>
 
-  <!-- Audio Element für Gegensprechanlage & Sirene -->
   <audio id="remoteAudioPlayer" autoplay></audio>
 
-  <!-- ========================================== -->
-  <!-- JAVASCRIPT ENGINE                          -->
-  <!-- ========================================== -->
   <script>
     lucide.createIcons();
 
     let peer = null;
-    let activeCall = null;
     let dataConnection = null;
     let localStream = null;
     let mediaRecorder = null;
     let recordedChunks = [];
     let isNightVisionActive = false;
-    let wakeLock = null;
 
-    // Zeitstempel Formatierer
     function getFormattedTimestamp() {
       const now = new Date();
       return now.getFullYear() + "-" + 
@@ -274,7 +232,6 @@
         String(now.getSeconds()).padStart(2, '0');
     }
 
-    // Uhrzeit auf OSD aktualisieren
     setInterval(() => {
       const ts = getFormattedTimestamp();
       const pcOsd = document.getElementById('camOsdTime');
@@ -283,42 +240,36 @@
       if (viewerOsd) viewerOsd.innerText = ts;
     }, 1000);
 
-    // Verhindern, dass Bildschirm ausgeht (WakeLock)
-    async function requestWakeLock() {
-      try {
-        if ('wakeLock' in navigator) {
-          wakeLock = await navigator.wakeLock.request('screen');
-        }
-      } catch (err) {
-        console.warn("WakeLock nicht aktiv:", err);
-      }
-    }
-
-    // ========================================================
-    // 1. KAMERA-STATION (PC ENGINE)
-    // ========================================================
+    // ==========================================
+    // 1. KAMERA-STATION (PC)
+    // ==========================================
     async function startCameraMode() {
       document.getElementById('modeSelection').classList.add('hidden');
       document.getElementById('cameraView').classList.remove('hidden');
-      requestWakeLock();
 
       try {
-        // Zugriff auf Video & Audio
-        localStream = await navigator.mediaDevices.getUserMedia({
-          video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } },
-          audio: true
-        });
+        try {
+          localStream = await navigator.mediaDevices.getUserMedia({
+            video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } },
+            audio: true
+          });
+        } catch(e) {
+          localStream = await navigator.mediaDevices.getUserMedia({
+            video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } },
+            audio: false
+          });
+        }
+
         document.getElementById('localVideo').srcObject = localStream;
 
-        // PeerJS initialisieren (kostenloser weltweiter Cloud-Signaling-Server)
         peer = new Peer('safecam-' + Math.random().toString(36).substring(2, 8));
         
         peer.on('open', (id) => {
           document.getElementById('cameraPeerIdDisplay').innerText = id;
           document.getElementById('statusText').innerText = "Warte auf Verbindung...";
           
-          // QR-Code mit Kopplungs-URL erzeugen
           const viewerUrl = window.location.origin + window.location.pathname + "#connect=" + id;
+          document.getElementById("qrcode").innerHTML = "";
           new QRCode(document.getElementById("qrcode"), {
             text: viewerUrl,
             width: 170,
@@ -328,41 +279,46 @@
           });
         });
 
-        // Eingehende Datenverbindung (Befehle wie Sirene, Flash, Push-to-Talk)
+        // Wenn das Handy sich verbindet:
         peer.on('connection', (conn) => {
           dataConnection = conn;
-          document.getElementById('statusText').innerText = "Verbunden mit Monitor";
+          document.getElementById('statusText').innerText = "Verbunden";
           document.getElementById('connectionStatus').classList.replace('text-amber-400', 'text-emerald-400');
 
           conn.on('data', (data) => {
-            handleRemoteCommand(data);
+            // Handy fordert den Video-Stream an: PC ruft das Handy mit Video an!
+            if (data.type === 'REQUEST_STREAM') {
+              console.log("Rufe Handy mit Video an:", data.viewerId);
+              peer.call(data.viewerId, localStream);
+            }
+            if (data.type === 'SIREN') playLocalSiren();
+            if (data.type === 'TORCH') {
+              const torch = document.getElementById('screenTorchOverlay');
+              torch.style.opacity = '1';
+              setTimeout(() => torch.style.opacity = '0', 2500);
+            }
           });
         });
 
-        // Eingehender Video/Audio-Call (Gegensprechanlage vom Handy)
+        // Handy sendet Gegensprechanlagen-Ton an PC
         peer.on('call', (call) => {
-          activeCall = call;
-          call.answer(localStream); // PC sendet seinen Videostream zurück
-          call.on('stream', (remoteAudio) => {
-            // Audio vom Smartphone abspielen (Push-to-Talk)
-            const audioElem = document.getElementById('remoteAudioPlayer');
-            audioElem.srcObject = remoteAudio;
-            audioElem.play().catch(e => console.log(e));
+          call.answer();
+          call.on('stream', (phoneAudio) => {
+            const player = document.getElementById('remoteAudioPlayer');
+            player.srcObject = phoneAudio;
+            player.play().catch(e => console.log(e));
           });
         });
 
-        // Sensoren starten
         initMotionDetection();
-        initSoundDetection();
+        if (localStream.getAudioTracks().length > 0) initSoundDetection();
 
       } catch (err) {
-        alert("Kamera-Fehler: Bitte erlaube Kamera- und Mikrofonzugriff! Details: " + err.message);
+        alert("Kamera-Fehler: " + err.message);
       }
     }
 
-    // ========================================================
-    // 2. BEWEGUNGS- & GERÄUSCHERKENNUNG
-    // ========================================================
+    // Bewegung & Ton erkennen
     function initMotionDetection() {
       const video = document.getElementById('localVideo');
       const canvas = document.getElementById('motionCanvas');
@@ -372,7 +328,6 @@
 
       setInterval(() => {
         if (video.readyState < 2) return;
-        
         canvas.width = 160;
         canvas.height = 120;
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -381,20 +336,17 @@
         if (prevFrame) {
           let diffScore = 0;
           const len = currentFrame.data.length;
-          // Prüfe Pixelunterschiede
           for (let i = 0; i < len; i += 16) {
-            const rDiff = Math.abs(currentFrame.data[i] - prevFrame.data[i]);
-            const gDiff = Math.abs(currentFrame.data[i+1] - prevFrame.data[i+1]);
-            const bDiff = Math.abs(currentFrame.data[i+2] - prevFrame.data[i+2]);
-            if (rDiff + gDiff + bDiff > 80) diffScore++;
+            if (Math.abs(currentFrame.data[i] - prevFrame.data[i]) +
+                Math.abs(currentFrame.data[i+1] - prevFrame.data[i+1]) +
+                Math.abs(currentFrame.data[i+2] - prevFrame.data[i+2]) > 80) diffScore++;
           }
 
-          const sensThreshold = 80 - parseInt(document.getElementById('motionSensitivity').value);
-
-          if (diffScore > sensThreshold && !motionCooldown) {
-            triggerSecurityAlarm("Bewegung erkannt!");
+          const threshold = 80 - parseInt(document.getElementById('motionSensitivity').value);
+          if (diffScore > threshold && !motionCooldown) {
+            triggerAlarm("Bewegung erkannt!");
             motionCooldown = true;
-            setTimeout(() => { motionCooldown = false; }, 8000); // 8s Cooldown
+            setTimeout(() => { motionCooldown = false; }, 8000);
           }
         }
         prevFrame = currentFrame;
@@ -408,7 +360,6 @@
         analyser.fftSize = 256;
         const source = audioCtx.createMediaStreamSource(localStream);
         source.connect(analyser);
-
         const dataArray = new Uint8Array(analyser.frequencyBinCount);
         let soundCooldown = false;
 
@@ -417,24 +368,19 @@
           let sum = 0;
           for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
           const avgVolume = sum / dataArray.length;
-
           const threshold = parseInt(document.getElementById('noiseSensitivity').value);
 
           if (avgVolume > threshold && !soundCooldown) {
-            triggerSecurityAlarm("Geräusch erkannt!");
+            triggerAlarm("Geräusch erkannt!");
             soundCooldown = true;
             setTimeout(() => { soundCooldown = false; }, 8000);
           }
         }, 200);
-      } catch(e) {
-        console.warn("Audio-Detection Initialisierung fehlgeschlagen:", e);
-      }
+      } catch(e) {}
     }
 
-    // Alarm Triggern (Clip aufnehmen & Handy benachrichtigen)
-    function triggerSecurityAlarm(type) {
-      // Optisches Feedback am PC
-      if (type.includes("Bewegung")) {
+    function triggerAlarm(msg) {
+      if (msg.includes("Bewegung")) {
         const b = document.getElementById('motionBadge');
         b.classList.remove('hidden');
         setTimeout(() => b.classList.add('hidden'), 3000);
@@ -444,204 +390,151 @@
         setTimeout(() => b.classList.add('hidden'), 3000);
       }
 
-      // Alarm-Event per Datenkanal an Handy schicken
       if (dataConnection && dataConnection.open) {
-        dataConnection.send({ type: 'ALERT', message: type, time: getFormattedTimestamp() });
+        dataConnection.send({ type: 'ALERT', message: msg, time: getFormattedTimestamp() });
       }
-
-      // 10-Sekunden Videoclip automatisch aufnehmen
       recordEventClip(10);
     }
 
-    // Automatischer Clip-Recorder
-    function recordEventClip(durationSeconds) {
+    function recordEventClip(seconds) {
       if (mediaRecorder && mediaRecorder.state === "recording") return;
-
       recordedChunks = [];
-      try {
-        mediaRecorder = new MediaRecorder(localStream, { mimeType: 'video/webm' });
-      } catch(e) {
-        mediaRecorder = new MediaRecorder(localStream);
-      }
-
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) recordedChunks.push(e.data);
-      };
-
+      try { mediaRecorder = new MediaRecorder(localStream); } catch(e) { return; }
+      mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
       mediaRecorder.onstop = () => {
         const blob = new Blob(recordedChunks, { type: 'video/webm' });
-        saveClipToGallery(blob, "Alarm-Clip: " + getFormattedTimestamp());
+        saveClipToGallery(blob, "Alarm: " + getFormattedTimestamp());
       };
-
       mediaRecorder.start();
-      setTimeout(() => {
-        if (mediaRecorder.state === "recording") mediaRecorder.stop();
-      }, durationSeconds * 1000);
+      setTimeout(() => { if (mediaRecorder.state === "recording") mediaRecorder.stop(); }, seconds * 1000);
     }
 
-    // Remote-Befehle am PC verarbeiten
-    function handleRemoteCommand(data) {
-      if (data.type === 'SIREN') {
-        playLocalSiren();
-      } else if (data.type === 'TORCH') {
-        const torch = document.getElementById('screenTorchOverlay');
-        torch.style.opacity = '1';
-        setTimeout(() => torch.style.opacity = '0', 2500);
-      }
-    }
-
-    // Laute PC-Sirene erzeugen (Synthesizer via Web Audio API)
     function playLocalSiren() {
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
       gain.connect(ctx.destination);
-
       osc.type = 'sawtooth';
       gain.gain.setValueAtTime(1, ctx.currentTime);
-
-      let startTime = ctx.currentTime;
       for (let i = 0; i < 5; i++) {
-        osc.frequency.setValueAtTime(600, startTime + i * 0.6);
-        osc.frequency.linearRampToValueAtTime(1300, startTime + i * 0.6 + 0.3);
+        osc.frequency.setValueAtTime(600, ctx.currentTime + i * 0.6);
+        osc.frequency.linearRampToValueAtTime(1300, ctx.currentTime + i * 0.6 + 0.3);
       }
-
       osc.start();
       osc.stop(ctx.currentTime + 3.0);
     }
 
-    // ========================================================
-    // 3. MONITOR-VIEWER (HANDY ENGINE)
-    // ========================================================
+    // ==========================================
+    // 2. MONITOR-VIEWER (HANDY)
+    // ==========================================
     function startViewerMode() {
       document.getElementById('modeSelection').classList.add('hidden');
       document.getElementById('viewerView').classList.remove('hidden');
-      requestWakeLock();
 
       peer = new Peer();
-      peer.on('open', () => {
+      peer.on('open', (id) => {
         document.getElementById('statusText').innerText = "Bereit zum Koppeln";
-      });
+        
+        // Empfange Videoanruf vom PC:
+        peer.on('call', (call) => {
+          call.answer(); // Nimm an
+          call.on('stream', (incomingStream) => {
+            const v = document.getElementById('remoteVideo');
+            v.srcObject = incomingStream;
+            
+            // Auf mobilen Browsern sofort abspielen probieren
+            v.play().catch(() => {
+              // Falls Autoplay blockiert: Overlay-Button anzeigen
+              document.getElementById('unmuteOverlayBtn').classList.remove('hidden');
+            });
+          });
+        });
 
-      // Prüfen, ob URL bereits ein Token aus dem QR-Code hat
-      if (window.location.hash.includes('connect=')) {
-        const targetId = window.location.hash.split('connect=')[1];
-        connectToCamera(targetId);
-      } else {
-        // QR-Code Scanner Kamera starten
-        const html5QrCode = new Html5Qrcode("reader");
-        html5QrCode.start(
-          { facingMode: "environment" },
-          { fps: 10, qrbox: { width: 220, height: 220 } },
-          (decodedText) => {
-            html5QrCode.stop();
-            if (decodedText.includes('#connect=')) {
-              connectToCamera(decodedText.split('#connect=')[1]);
-            } else {
-              connectToCamera(decodedText);
+        if (window.location.hash.includes('connect=')) {
+          initiateConnection(window.location.hash.split('connect=')[1]);
+        } else {
+          const html5QrCode = new Html5Qrcode("reader");
+          html5QrCode.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: { width: 220, height: 220 } },
+            (decodedText) => {
+              html5QrCode.stop();
+              if (decodedText.includes('#connect=')) {
+                initiateConnection(decodedText.split('#connect=')[1]);
+              } else {
+                initiateConnection(decodedText);
+              }
             }
-          }
-        ).catch(err => console.log("Scanner Info:", err));
-      }
+          ).catch(() => {});
+        }
+      });
 
       setupPushToTalk();
     }
 
-    // Verbindung zur PC-Kamera aufbauen
-    function connectToCamera(remotePeerId) {
-      if (!remotePeerId) return alert("Ungültige Kamera-ID");
-
+    // Verbindung starten: Handy fordert PC auf, Video zu senden
+    function initiateConnection(cameraPeerId) {
+      if (!cameraPeerId) return alert("Ungültige ID");
       document.getElementById('viewerConnectCard').classList.add('hidden');
       document.getElementById('statusText').innerText = "Verbinde P2P...";
 
-      // Daten-Kanal öffnen
-      dataConnection = peer.connect(remotePeerId);
+      dataConnection = peer.connect(cameraPeerId);
       dataConnection.on('open', () => {
         document.getElementById('statusText').innerText = "Live";
         document.getElementById('connectionStatus').classList.replace('text-amber-400', 'text-emerald-400');
+        
+        // WICHTIG: PC anweisen, sein Video an dieses Handy zu schicken!
+        dataConnection.send({ type: 'REQUEST_STREAM', viewerId: peer.id });
       });
 
-      // Alarmierungsempfang am Handy
       dataConnection.on('data', (data) => {
         if (data.type === 'ALERT') {
-          showMobileAlert(data.message + " (" + data.time + ")");
+          if (navigator.vibrate) navigator.vibrate([300, 150, 300]);
+          const banner = document.getElementById('alertBanner');
+          document.getElementById('alertBannerText').innerText = data.message + " (" + data.time + ")";
+          banner.classList.remove('hidden');
         }
       });
-
-      // Fake-Audio-Stream senden, um Video vom PC abzurufen
-      navigator.mediaDevices.getUserMedia({ audio: true, video: false }).then(micStream => {
-        // Zunächst gemutet, damit keine Rückkopplung entsteht
-        micStream.getAudioTracks().forEach(t => t.enabled = false);
-        window.phoneMicStream = micStream;
-
-        const call = peer.call(remotePeerId, micStream);
-        call.on('stream', (remoteVideoStream) => {
-          const v = document.getElementById('remoteVideo');
-          v.srcObject = remoteVideoStream;
-          v.play();
-        });
-      }).catch(() => {
-        // Falls Mikrofon verweigert wird, nur empfangen
-        const call = peer.call(remotePeerId, new MediaStream());
-        call.on('stream', (remoteVideoStream) => {
-          document.getElementById('remoteVideo').srcObject = remoteVideoStream;
-        });
-      });
     }
 
-    // Alarm-Banner auf dem Handy einblenden
-    function showMobileAlert(text) {
-      // Vibrations-Alarm (falls vom Smartphone-Browser unterstützt)
-      if (navigator.vibrate) navigator.vibrate([300, 150, 300]);
-      
-      const banner = document.getElementById('alertBanner');
-      document.getElementById('alertBannerText').innerText = text;
-      banner.classList.remove('hidden');
-
-      // Ereignis in Liste einfügen
-      const item = document.createElement('div');
-      item.className = "bg-rose-950/40 border border-rose-800 p-2 rounded-lg text-xs flex justify-between items-center text-rose-300";
-      item.innerHTML = `<span><i data-lucide='alert-triangle' class='w-3 h-3 inline mr-1'></i> ${text}</span> <span class='font-mono'>${getFormattedTimestamp().split(' ')[1]}</span>`;
-      document.getElementById('clipsGallery').prepend(item);
-      lucide.createIcons();
+    function unlockVideoPlayback() {
+      const v = document.getElementById('remoteVideo');
+      v.play();
+      document.getElementById('unmuteOverlayBtn').classList.add('hidden');
     }
 
-    function dismissAlert() {
-      document.getElementById('alertBanner').classList.add('hidden');
-    }
-
-    // Gegensprechanlage: Push-to-Talk Logik
     function setupPushToTalk() {
       const ptt = document.getElementById('pttBtn');
+      let phoneMic = null;
+      let micCall = null;
 
-      const startTalking = () => {
-        if (window.phoneMicStream) {
-          window.phoneMicStream.getAudioTracks().forEach(t => t.enabled = true);
+      const startTalking = async () => {
+        try {
+          if (!phoneMic) phoneMic = await navigator.mediaDevices.getUserMedia({ audio: true });
           ptt.classList.replace('bg-slate-800', 'bg-emerald-600');
-        }
+          if (dataConnection) {
+            micCall = peer.call(dataConnection.peer, phoneMic);
+          }
+        } catch(e) {}
       };
 
       const stopTalking = () => {
-        if (window.phoneMicStream) {
-          window.phoneMicStream.getAudioTracks().forEach(t => t.enabled = false);
-          ptt.classList.replace('bg-emerald-600', 'bg-slate-800');
-        }
+        ptt.classList.replace('bg-emerald-600', 'bg-slate-800');
+        if (micCall) { micCall.close(); micCall = null; }
+        if (phoneMic) { phoneMic.getTracks().forEach(t => t.stop()); phoneMic = null; }
       };
 
-      // Touch & Mouse Events für Walkie-Talkie
       ptt.addEventListener('mousedown', startTalking);
       ptt.addEventListener('mouseup', stopTalking);
       ptt.addEventListener('touchstart', (e) => { e.preventDefault(); startTalking(); });
       ptt.addEventListener('touchend', (e) => { e.preventDefault(); stopTalking(); });
     }
 
-    // Nachtsicht Umschalter
     function toggleNightVision() {
       isNightVisionActive = !isNightVisionActive;
       const v = document.getElementById('remoteVideo');
       const badge = document.getElementById('nightVisionBadge');
-
       if (isNightVisionActive) {
         v.classList.add('night-vision');
         badge.classList.remove('hidden');
@@ -651,32 +544,25 @@
       }
     }
 
-    // Fernauslöser für Sirene
     function triggerRemoteSiren() {
       if (dataConnection && dataConnection.open) {
         dataConnection.send({ type: 'SIREN' });
-        alert("Sirene an der PC-Kamera ausgelöst!");
+        alert("Sirene am PC ausgelöst!");
       }
     }
 
-    // Fernauslöser für Licht/Blitz
     function triggerRemoteTorch() {
-      if (dataConnection && dataConnection.open) {
-        dataConnection.send({ type: 'TORCH' });
-      }
+      if (dataConnection && dataConnection.open) dataConnection.send({ type: 'TORCH' });
     }
 
-    // Momentaufnahme (Foto) machen
     function takeSnapshot() {
-      const video = document.getElementById('remoteVideo');
+      const v = document.getElementById('remoteVideo');
       const c = document.createElement('canvas');
-      c.width = video.videoWidth || 1280;
-      c.height = video.videoHeight || 720;
+      c.width = v.videoWidth || 1280;
+      c.height = v.videoHeight || 720;
       const ctx = c.getContext('2d');
       if (isNightVisionActive) ctx.filter = 'brightness(2.2) contrast(1.8) grayscale(1)';
-      ctx.drawImage(video, 0, 0, c.width, c.height);
-
-      // Zeitstempel aufdrucken
+      ctx.drawImage(v, 0, 0, c.width, c.height);
       ctx.fillStyle = "white";
       ctx.font = "20px monospace";
       ctx.fillText(getFormattedTimestamp(), 20, 40);
@@ -687,11 +573,10 @@
       a.click();
     }
 
-    // Manuelle Videoaufnahme am Handy
     let manualRecorder = null;
     let manualChunks = [];
     function toggleManualRecording() {
-      const video = document.getElementById('remoteVideo');
+      const v = document.getElementById('remoteVideo');
       const btnText = document.getElementById('recBtnText');
       const recIcon = document.getElementById('recIcon');
 
@@ -701,25 +586,23 @@
         recIcon.classList.remove('animate-ping');
       } else {
         manualChunks = [];
-        const stream = video.captureStream ? video.captureStream() : video.srcObject;
+        const stream = v.captureStream ? v.captureStream() : v.srcObject;
         manualRecorder = new MediaRecorder(stream);
         manualRecorder.ondataavailable = e => manualChunks.push(e.data);
         manualRecorder.onstop = () => {
           const blob = new Blob(manualChunks, { type: 'video/webm' });
-          saveClipToGallery(blob, "Manuelle Aufnahme " + getFormattedTimestamp());
+          saveClipToGallery(blob, "Manuell: " + getFormattedTimestamp());
         };
         manualRecorder.start();
-        btnText.innerText = "Aufnahme stoppen...";
+        btnText.innerText = "Stoppen...";
         recIcon.classList.add('animate-ping');
       }
     }
 
-    // Speichern & Anzeigen in der Galerie
     function saveClipToGallery(blob, title) {
       document.getElementById('noClipsMsg')?.remove();
       const url = URL.createObjectURL(blob);
       const gallery = document.getElementById('clipsGallery');
-
       const card = document.createElement('div');
       card.className = "bg-slate-950 p-2 rounded-xl border border-slate-800 flex items-center justify-between gap-3 text-xs";
       card.innerHTML = `
@@ -728,8 +611,8 @@
           <span class="truncate font-mono">${title}</span>
         </div>
         <div class="flex items-center gap-1.5 shrink-0">
-          <a href="${url}" target="_blank" class="bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded text-slate-200">Abspielen</a>
-          <a href="${url}" download="${title.replace(/[: ]/g, '_')}.webm" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-1 rounded">Download</a>
+          <a href="${url}" target="_blank" class="bg-slate-800 px-2 py-1 rounded text-slate-200">Play</a>
+          <a href="${url}" download="${title.replace(/[: ]/g, '_')}.webm" class="bg-emerald-600 text-white px-2 py-1 rounded">Download</a>
         </div>
       `;
       gallery.prepend(card);
